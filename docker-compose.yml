@@ -21,6 +21,9 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/psicology
       SPRING_DATASOURCE_USERNAME: psicology
       SPRING_DATASOURCE_PASSWORD: psicology
+      APP_STORAGE_UPLOAD_DIR: /app/uploads
+    volumes:
+      - backend_uploads:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -37,3 +40,4 @@ services:
 
 volumes:
   postgres_data:
+  backend_uploads:
