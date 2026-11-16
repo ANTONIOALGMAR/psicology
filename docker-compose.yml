@@ -6,8 +6,6 @@ services:
       POSTGRES_DB: psicology
       POSTGRES_USER: psicology
       POSTGRES_PASSWORD: psicology
-    ports:
-      - "5435:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -15,6 +13,27 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  backend:
+    build: ./backend
+    container_name: psicology-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/psicology
+      SPRING_DATASOURCE_USERNAME: psicology
+      SPRING_DATASOURCE_PASSWORD: psicology
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build: ./frontend
+    container_name: psicology-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
 
 volumes:
   postgres_data:

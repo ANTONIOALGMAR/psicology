@@ -3,9 +3,9 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5435/psicology
-    username: psicology
-    password: psicology
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5435/psicology}
+    username: ${SPRING_DATASOURCE_USERNAME:psicology}
+    password: ${SPRING_DATASOURCE_PASSWORD:psicology}
   jpa:
     hibernate:
       ddl-auto: validate
