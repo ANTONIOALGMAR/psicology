@@ -2,28 +2,27 @@
 
 Este guia é para quem quer **baixar e usar o sistema** com o mínimo de passos.
 
-## Opção mais fácil (automática): baixar e rodar com 1 arquivo
-> Requer apenas o **Docker Desktop** instalado e aberto.
+## Opção mais fácil (automática): 1 arquivo para instalar e rodar
+Os scripts abaixo tentam fazer tudo automaticamente: **instalar/iniciar o Docker (quando possível)**, baixar o sistema do GitHub e executá-lo.
 
-### 1) Instale o Docker Desktop (uma vez)
-- Download: https://www.docker.com/products/docker-desktop/
-- Instale e **abra o Docker Desktop**. Aguarde até ele indicar que está em execução.
+### Windows
+1. Baixe o arquivo: [instalar-e-rodar.bat](https://raw.githubusercontent.com/ANTONIOALGMAR/psicology/main/instalar-e-rodar.bat) (se precisar: clique com o botão direito → "Salvar link como...")
+2. Dê **dois cliques** em `instalar-e-rodar.bat`
+3. Se o Docker não estiver instalado, o script tentará instalá-lo (via `winget` ou instalador do Docker Desktop). **Pode ser necessário concluir a instalação, reiniciar o computador e/ou abrir o Docker Desktop e executar o arquivo novamente.**
+4. Ao final, o sistema abrirá em: **http://localhost:3000**
 
-### 2) Baixe e execute o instalador automático
-- **Windows:**
-  1. Baixe o arquivo: [instalar-e-rodar.bat](https://raw.githubusercontent.com/ANTONIOALGMAR/psicology/main/instalar-e-rodar.bat) (clique com o botão direito → "Salvar link como..." se necessário)
-  2. Dê **dois cliques** no arquivo `instalar-e-rodar.bat`
-  3. O script vai baixar o sistema do GitHub, preparar e iniciar automaticamente
-- **Linux/Mac:**
-  1. Baixe o arquivo: [instalar-e-rodar.sh](https://raw.githubusercontent.com/ANTONIOALGMAR/psicology/main/instalar-e-rodar.sh)
-  2. No terminal, execute:
-     ```bash
-     chmod +x instalar-e-rodar.sh
-     ./instalar-e-rodar.sh
-     ```
+### Linux/Mac
+1. Baixe o arquivo: [instalar-e-rodar.sh](https://raw.githubusercontent.com/ANTONIOALGMAR/psicology/main/instalar-e-rodar.sh)
+2. No terminal, execute:
+   ```bash
+   chmod +x instalar-e-rodar.sh
+   ./instalar-e-rodar.sh
+   ```
+3. Se o Docker não estiver instalado, o script tentará instalá-lo (Linux: script oficial do Docker, podendo pedir senha `sudo`; Mac: via Homebrew, se disponível). **Pode ser necessário reiniciar a sessão/computador, abrir o Docker Desktop (Mac) e executar o script novamente.**
 
-Ao final, o sistema abrirá em: **http://localhost:3000**  
-(Por padrão o sistema é baixado em `~/PsiCare` ou `%USERPROFILE%\PsiCare`.)
+Por padrão o sistema é baixado em `~/PsiCare` (Linux/Mac) ou `%USERPROFILE%\PsiCare` (Windows). Você pode mudar a pasta definindo a variável `PSICARE_DIR` antes de executar.
+
+> **Observação:** a instalação do Docker pode exigir permissões de administrador, aceite de termos e, em alguns casos, reinicialização. Se algo não concluir automaticamente, instale o Docker Desktop manualmente em https://www.docker.com/products/docker-desktop/ e execute o script novamente.
 
 ## Opção alternativa: baixar o ZIP do projeto
 1. Acesse: https://github.com/ANTONIOALGMAR/psicology
