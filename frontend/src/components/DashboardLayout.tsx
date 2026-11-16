@@ -5,10 +5,12 @@ const navPatient = [
   { to: '/', label: 'Início' },
   { to: '/diario', label: 'Meu Diário' },
   { to: '/testes', label: 'Testes' },
+  { to: '/conta', label: 'Conta' },
 ]
 const navPsy = [
   { to: '/', label: 'Pacientes' },
   { to: '/testes', label: 'Testes' },
+  { to: '/conta', label: 'Conta' },
 ]
 
 export default function DashboardLayout() {

@@ -36,4 +36,22 @@ public class AuthController {
         User creator = userRepository.findById(principal.getId()).orElseThrow();
         return authService.createInvite(req, creator);
     }
+
+    @PutMapping("/me")
+    public UserResponse updateProfile(@Valid @RequestBody UpdateProfileRequest req, @AuthenticationPrincipal AppUserDetails principal) {
+        try {
+            return authService.updateProfile(principal.getId(), req);
+        } catch (IllegalArgumentException e) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @PostMapping("/change-password")
+    public void changePassword(@Valid @RequestBody ChangePasswordRequest req, @AuthenticationPrincipal AppUserDetails principal) {
+        try {
+            authService.changePassword(principal.getId(), req);
+        } catch (IllegalArgumentException e) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
 }

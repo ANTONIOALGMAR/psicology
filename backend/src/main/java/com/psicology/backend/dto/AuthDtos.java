@@ -13,4 +13,6 @@ public class AuthDtos {
     public record UserResponse(java.util.UUID id, String name, String email, Role role) {}
     public record InviteRequest(@Email String email, Role role) {}
     public record InviteResponse(String code, Role role, String email) {}
+    public record ChangePasswordRequest(@NotBlank String currentPassword, @Size(min = 6) String newPassword) {}
+    public record UpdateProfileRequest(@NotBlank String name) {}
 }

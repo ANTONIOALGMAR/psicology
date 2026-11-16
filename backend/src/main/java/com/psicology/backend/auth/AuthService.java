@@ -93,6 +93,29 @@ public class AuthService {
         return new InviteResponse(invite.getCode(), invite.getRole(), invite.getEmail());
     }
 
+    @Transactional
+    public UserResponse updateProfile(UUID userId, UpdateProfileRequest req) {
+        User user = userRepository.findById(userId).orElseThrow();
+        String name = req.name() != null ? req.name().trim() : "";
+        if (name.isBlank()) throw new IllegalArgumentException("Nome inválido");
+        user.setName(name);
+        userRepository.save(user);
+        return new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole());
+    }
+
+    @Transactional
+    public void changePassword(UUID userId, ChangePasswordRequest req) {
+        User user = userRepository.findById(userId).orElseThrow();
+        if (!passwordEncoder.matches(req.currentPassword(), user.getPasswordHash())) {
+            throw new IllegalArgumentException("Senha atual incorreta");
+        }
+        if (req.newPassword() == null || req.newPassword().length() < 6) {
+            throw new IllegalArgumentException("A nova senha deve ter pelo menos 6 caracteres");
+        }
+        user.setPasswordHash(passwordEncoder.encode(req.newPassword()));
+        userRepository.save(user);
+    }
+
     private AuthResponse authResponse(User user) {
         String token = jwtService.generateToken(user.getEmail(), Map.of("role", user.getRole().name(), "uid", user.getId().toString()));
         return new AuthResponse(token, new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole()));

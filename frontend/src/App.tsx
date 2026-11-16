@@ -7,6 +7,7 @@ import DiaryPage from './pages/DiaryPage'
 import TestsPage from './pages/TestsPage'
 import HomePage from './pages/HomePage'
 import PsychologistPage from './pages/PsychologistPage'
+import AccountPage from './pages/AccountPage'
 
 function Protected({ children }: { children: JSX.Element }) {
   const { token } = useAuth()
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="diario" element={<DiaryPage />} />
         <Route path="pacientes" element={<PsychologistPage />} />
         <Route path="testes" element={<TestsPage />} />
+        <Route path="conta" element={<AccountPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
