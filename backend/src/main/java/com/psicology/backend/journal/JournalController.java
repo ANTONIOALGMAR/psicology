@@ -1,9 +1,13 @@
 package com.psicology.backend.journal;
 
+import com.psicology.backend.domain.comment.JournalComment;
+import com.psicology.backend.domain.comment.JournalCommentRepository;
 import com.psicology.backend.domain.journal.JournalAttachment;
 import com.psicology.backend.domain.journal.JournalAttachmentRepository;
 import com.psicology.backend.domain.journal.JournalEntry;
 import com.psicology.backend.domain.journal.JournalEntryRepository;
+import com.psicology.backend.domain.link.PatientLinkRepository;
+import com.psicology.backend.domain.user.Role;
 import com.psicology.backend.domain.user.User;
 import com.psicology.backend.domain.user.UserRepository;
 import com.psicology.backend.security.AppUserDetails;
@@ -23,8 +27,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -34,25 +36,29 @@ import java.util.stream.Collectors;
 public class JournalController {
     private final JournalEntryRepository repo;
     private final JournalAttachmentRepository attachmentRepo;
+    private final JournalCommentRepository commentRepo;
+    private final PatientLinkRepository linkRepo;
     private final UserRepository userRepository;
     private final FileStorageService storage;
 
-    public JournalController(JournalEntryRepository repo, JournalAttachmentRepository attachmentRepo, UserRepository userRepository, FileStorageService storage) {
+    public JournalController(JournalEntryRepository repo, JournalAttachmentRepository attachmentRepo, JournalCommentRepository commentRepo, PatientLinkRepository linkRepo, UserRepository userRepository, FileStorageService storage) {
         this.repo = repo;
         this.attachmentRepo = attachmentRepo;
+        this.commentRepo = commentRepo;
+        this.linkRepo = linkRepo;
         this.userRepository = userRepository;
         this.storage = storage;
     }
 
     public record JournalRequest(@NotBlank String content, String title, String mood, Instant entryDate) {}
     public record AttachmentResponse(UUID id, String type, String originalName, String mimeType, String url, Instant createdAt) {}
-    public record JournalResponse(UUID id, String title, String content, String mood, Instant entryDate, Instant createdAt, List<AttachmentResponse> attachments) {}
+    public record CommentResponse(UUID id, String authorName, String authorRole, String content, Instant createdAt) {}
+    public record JournalResponse(UUID id, String title, String content, String mood, Instant entryDate, Instant createdAt, List<AttachmentResponse> attachments, List<CommentResponse> comments) {}
 
     @GetMapping
     public List<JournalResponse> list(@AuthenticationPrincipal AppUserDetails principal) {
         List<JournalEntry> entries = repo.findByPatientId(principal.getId(), Sort.by(Sort.Direction.DESC, "entryDate"));
-        Map<UUID, List<JournalAttachment>> byEntry = attachmentsByEntry(entries);
-        return entries.stream().map(e -> toDto(e, byEntry.getOrDefault(e.getId(), List.of()))).toList();
+        return toDtos(entries);
     }
 
     @PostMapping
@@ -61,7 +67,7 @@ public class JournalController {
         JournalEntry e = JournalEntry.builder()
                 .patient(patient).title(req.title()).content(req.content()).mood(req.mood()).entryDate(req.entryDate()).build();
         JournalEntry saved = repo.save(e);
-        return toDto(saved, List.of());
+        return toDto(saved, List.of(), List.of());
     }
 
     @PutMapping("/{id}")
@@ -70,7 +76,7 @@ public class JournalController {
         e.setTitle(req.title()); e.setContent(req.content()); e.setMood(req.mood());
         if (req.entryDate() != null) e.setEntryDate(req.entryDate());
         JournalEntry saved = repo.save(e);
-        return toDto(saved, attachmentRepo.findByEntryId(saved.getId()));
+        return toDto(saved, attachmentRepo.findByEntryId(saved.getId()), commentRepo.findByEntryIdOrderByCreatedAtAsc(saved.getId()));
     }
 
     @DeleteMapping("/{id}")
@@ -109,8 +115,12 @@ public class JournalController {
                                                       @PathVariable UUID attachmentId) throws MalformedURLException {
         JournalAttachment a = attachmentRepo.findById(attachmentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (!a.getEntry().getPatient().getId().equals(principal.getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        UUID uid = principal.getId();
+        UUID patientId = a.getEntry().getPatient().getId();
+        if (!patientId.equals(uid)) {
+            boolean linked = principal.getUser().getRole() == Role.PSYCHOLOGIST
+                    && linkRepo.existsByPsychologistIdAndPatientIdAndStatus(uid, patientId, "ACTIVE");
+            if (!linked) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         Resource resource = storage.loadAsResource(a.getFilePath());
         String contentType = a.getMimeType() != null ? a.getMimeType() : "application/octet-stream";
@@ -139,17 +149,23 @@ public class JournalController {
         return e;
     }
 
-    private Map<UUID, List<JournalAttachment>> attachmentsByEntry(List<JournalEntry> entries) {
-        if (entries.isEmpty()) return Map.of();
+    public List<JournalResponse> toDtos(List<JournalEntry> entries) {
+        if (entries.isEmpty()) return List.of();
         List<UUID> ids = entries.stream().map(JournalEntry::getId).toList();
-        return attachmentRepo.findByEntryIdIn(ids).stream().collect(Collectors.groupingBy(a -> a.getEntry().getId()));
+        Map<UUID, List<JournalAttachment>> byEntry = attachmentRepo.findByEntryIdIn(ids).stream().collect(Collectors.groupingBy(a -> a.getEntry().getId()));
+        Map<UUID, List<JournalComment>> commentsByEntry = commentRepo.findByEntryIdInOrderByCreatedAtAsc(ids).stream().collect(Collectors.groupingBy(c -> c.getEntry().getId()));
+        return entries.stream().map(e -> toDto(e, byEntry.getOrDefault(e.getId(), List.of()), commentsByEntry.getOrDefault(e.getId(), List.of()))).toList();
     }
 
-    private JournalResponse toDto(JournalEntry e, List<JournalAttachment> attachments) {
+    private JournalResponse toDto(JournalEntry e, List<JournalAttachment> attachments, List<JournalComment> comments) {
         List<AttachmentResponse> atts = attachments.stream()
                 .sorted(Comparator.comparing(JournalAttachment::getCreatedAt))
                 .map(this::toAttachmentDto).toList();
-        return new JournalResponse(e.getId(), e.getTitle(), e.getContent(), e.getMood(), e.getEntryDate(), e.getCreatedAt(), atts);
+        List<CommentResponse> comms = comments.stream()
+                .sorted(Comparator.comparing(JournalComment::getCreatedAt))
+                .map(c -> new CommentResponse(c.getId(), c.getAuthor().getName(), c.getAuthor().getRole().name(), c.getContent(), c.getCreatedAt()))
+                .toList();
+        return new JournalResponse(e.getId(), e.getTitle(), e.getContent(), e.getMood(), e.getEntryDate(), e.getCreatedAt(), atts, comms);
     }
 
     private AttachmentResponse toAttachmentDto(JournalAttachment a) {

@@ -2,6 +2,8 @@ package com.psicology.backend.auth;
 
 import com.psicology.backend.domain.invite.Invite;
 import com.psicology.backend.domain.invite.InviteRepository;
+import com.psicology.backend.domain.link.PatientLink;
+import com.psicology.backend.domain.link.PatientLinkRepository;
 import com.psicology.backend.domain.user.Role;
 import com.psicology.backend.domain.user.User;
 import com.psicology.backend.domain.user.UserRepository;
@@ -21,13 +23,15 @@ import java.util.UUID;
 public class AuthService {
     private final UserRepository userRepository;
     private final InviteRepository inviteRepository;
+    private final PatientLinkRepository patientLinkRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
-    public AuthService(UserRepository userRepository, InviteRepository inviteRepository, PasswordEncoder passwordEncoder, JwtService jwtService, AuthenticationManager authenticationManager) {
+    public AuthService(UserRepository userRepository, InviteRepository inviteRepository, PatientLinkRepository patientLinkRepository, PasswordEncoder passwordEncoder, JwtService jwtService, AuthenticationManager authenticationManager) {
         this.userRepository = userRepository;
         this.inviteRepository = inviteRepository;
+        this.patientLinkRepository = patientLinkRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
@@ -54,6 +58,17 @@ public class AuthService {
             invite.setUsedBy(user);
             invite.setUsedAt(Instant.now());
             inviteRepository.save(invite);
+            User creator = invite.getCreatedBy();
+            if (creator != null && creator.getRole() == Role.PSYCHOLOGIST && user.getRole() == Role.PATIENT) {
+                boolean exists = patientLinkRepository.existsByPsychologistIdAndPatientIdAndStatus(creator.getId(), user.getId(), "ACTIVE");
+                if (!exists) {
+                    PatientLink link = new PatientLink();
+                    link.setPsychologist(creator);
+                    link.setPatient(user);
+                    link.setStatus("ACTIVE");
+                    patientLinkRepository.save(link);
+                }
+            }
         }
         return authResponse(user);
     }

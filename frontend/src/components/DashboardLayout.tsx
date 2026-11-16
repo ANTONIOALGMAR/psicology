@@ -1,14 +1,19 @@
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
-const nav = [
+const navPatient = [
   { to: '/', label: 'Início' },
   { to: '/diario', label: 'Meu Diário' },
+  { to: '/testes', label: 'Testes' },
+]
+const navPsy = [
+  { to: '/', label: 'Pacientes' },
   { to: '/testes', label: 'Testes' },
 ]
 
 export default function DashboardLayout() {
   const { user, logout } = useAuth()
+  const nav = user?.role === 'PSYCHOLOGIST' ? navPsy : navPatient
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-50 via-slate-50 to-teal-50">
       <header className="sticky top-0 z-10 border-b border-white/60 bg-white/70 backdrop-blur">
