@@ -29,10 +29,10 @@ export default function LoginPage() {
           <h2 className="text-2xl font-bold text-slate-900 mb-1">Bem-vindo(a) de volta</h2>
           <p className="text-slate-500 mb-6">Entre para continuar seu acompanhamento.</p>
           {error && <div className="mb-4 rounded-xl bg-red-50 text-red-700 px-4 py-3 text-sm">{error}</div>}
-          <label className="block text-sm font-medium mb-1">E-mail</label>
-          <input className="w-full rounded-xl border border-slate-200 px-4 py-3 mb-4 focus:outline-none focus:ring-2 focus:ring-brand-300" value={email} onChange={e=>setEmail(e.target.value)} type="email" required />
-          <label className="block text-sm font-medium mb-1">Senha</label>
-          <input className="w-full rounded-xl border border-slate-200 px-4 py-3 mb-6 focus:outline-none focus:ring-2 focus:ring-brand-300" value={password} onChange={e=>setPassword(e.target.value)} type="password" required />
+          <label htmlFor="login-email" className="block text-sm font-medium mb-1">E-mail</label>
+          <input id="login-email" className="w-full rounded-xl border border-slate-200 px-4 py-3 mb-4 focus:outline-none focus:ring-2 focus:ring-brand-300" value={email} onChange={e=>setEmail(e.target.value)} type="email" required />
+          <label htmlFor="login-password" className="block text-sm font-medium mb-1">Senha</label>
+          <input id="login-password" className="w-full rounded-xl border border-slate-200 px-4 py-3 mb-6 focus:outline-none focus:ring-2 focus:ring-brand-300" value={password} onChange={e=>setPassword(e.target.value)} type="password" required />
           <button disabled={loading} className="w-full rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 transition disabled:opacity-60">{loading ? 'Entrando...' : 'Entrar'}</button>
           <p className="text-sm text-slate-600 mt-5 text-center">Não tem conta? <Link to="/register" className="text-brand-700 font-semibold">Cadastre-se</Link></p>
         </form>
