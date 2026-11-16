@@ -7,7 +7,7 @@ set "ZIP_URL=https://github.com/ANTONIOALGMAR/psicology/archive/refs/heads/main.
 if "%PSICARE_DIR%"=="" (set "INSTALL_DIR=%USERPROFILE%\PsiCare") else (set "INSTALL_DIR=%PSICARE_DIR%")
 
 echo ==========================================
-echo   PsiCare - Instalacao completa e execucao
+echo   PsiCare - Instalacao/Atualizacao e execucao
 echo ==========================================
 echo.
 
@@ -82,36 +82,88 @@ echo [OK] Docker pronto.
 
 REM 2) Baixar/atualizar o sistema
 if exist "%INSTALL_DIR%\.git" (
-  echo [..] Atualizando o sistema em %INSTALL_DIR% ...
-  git -C "%INSTALL_DIR%" pull --ff-only >nul 2>nul || echo [AVISO] Nao foi possivel atualizar automaticamente.
+  where git >nul 2>nul
+  if %errorlevel% equ 0 (
+    echo [..] Sistema ja instalado (git). Baixando atualizacao em %INSTALL_DIR% ...
+    git -C "%INSTALL_DIR%" remote set-url origin "%REPO_URL%" >nul 2>nul
+    git -C "%INSTALL_DIR%" fetch origin --prune
+    git -C "%INSTALL_DIR%" rev-parse --verify origin/main >nul 2>nul
+    if !errorlevel! equ 0 (
+      git -C "%INSTALL_DIR%" checkout -f main >nul 2>nul || git -C "%INSTALL_DIR%" checkout -B main origin/main
+      git -C "%INSTALL_DIR%" reset --hard origin/main
+      git -C "%INSTALL_DIR%" clean -fd >nul 2>nul
+      echo [OK] Sistema atualizado.
+    ) else (
+      echo [AVISO] Nao foi possivel atualizar via git. Tentando atualizar via ZIP...
+      goto :updatezip
+    )
+  ) else (
+    echo [..] Git nao encontrado. Atualizando via ZIP...
+    goto :updatezip
+  )
 ) else if exist "%INSTALL_DIR%\docker-compose.yml" (
-  echo [OK] Sistema ja encontrado em %INSTALL_DIR%
+  echo [..] Sistema ja instalado. Baixando atualizacao em %INSTALL_DIR% ...
+  goto :updatezip
+) else if exist "%INSTALL_DIR%\*" (
+  echo [..] Pasta existente encontrada. Baixando/atualizando sistema em %INSTALL_DIR% ...
+  goto :updatezip
 ) else (
   echo [..] Baixando o sistema para %INSTALL_DIR% ...
   where git >nul 2>nul
   if %errorlevel% equ 0 (
     git clone "%REPO_URL%" "%INSTALL_DIR%"
-    if !errorlevel! neq 0 goto :downloadzip
+    if !errorlevel! neq 0 goto :freshzip
   ) else (
-    goto :downloadzip
+    goto :freshzip
   )
+  echo [OK] Sistema instalado.
   goto :afterdownload
-  :downloadzip
-  set "TMPZIP=%TEMP%\psicare-main.zip"
-  set "TMPDIR=%TEMP%\psicare-extract"
-  powershell -NoProfile -ExecutionPolicy Bypass -Command "try { Invoke-WebRequest -Uri '%ZIP_URL%' -OutFile '%TMPZIP%' -UseBasicParsing; if (Test-Path '%TMPDIR%') { Remove-Item -Recurse -Force '%TMPDIR%' }; Expand-Archive -Path '%TMPZIP%' -DestinationPath '%TMPDIR%' -Force; Move-Item -Path '%TMPDIR%\psicology-main' -Destination '%INSTALL_DIR%'; Remove-Item -Force '%TMPZIP%'; Remove-Item -Recurse -Force '%TMPDIR%' } catch { exit 1 }"
-  if %errorlevel% neq 0 (
+  :freshzip
+  powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+    "$ErrorActionPreference='Stop';" ^
+    "$zip=Join-Path $env:TEMP 'psicare-main.zip';" ^
+    "$tmp=Join-Path $env:TEMP 'psicare-extract';" ^
+    "$dest='%INSTALL_DIR%';" ^
+    "try { Invoke-WebRequest -Uri '%ZIP_URL%' -OutFile $zip -UseBasicParsing } catch { Write-Error $_; exit 1 };" ^
+    "if (Test-Path $tmp) { Remove-Item -Recurse -Force $tmp }; Expand-Archive -Path $zip -DestinationPath $tmp -Force;" ^
+    "if (!(Test-Path $dest)) { New-Item -ItemType Directory -Path $dest | Out-Null };" ^
+    "Copy-Item -Path (Join-Path $tmp 'psicology-main\*') -Destination $dest -Recurse -Force;" ^
+    "Remove-Item -Force $zip -ErrorAction SilentlyContinue; Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue;"
+  if !errorlevel! neq 0 (
     echo [ERRO] Nao foi possivel baixar automaticamente.
     echo Baixe manualmente em: https://github.com/ANTONIOALGMAR/psicology ^(Code ^> Download ZIP^)
     pause
     exit /b 1
   )
+  echo [OK] Sistema instalado.
+  goto :afterdownload
 )
+goto :afterdownload
+
+:updatezip
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+  "$ErrorActionPreference='Stop';" ^
+  "$zip=Join-Path $env:TEMP 'psicare-main.zip';" ^
+  "$tmp=Join-Path $env:TEMP 'psicare-extract';" ^
+  "$dest='%INSTALL_DIR%';" ^
+  "try { Invoke-WebRequest -Uri '%ZIP_URL%' -OutFile $zip -UseBasicParsing } catch { Write-Error $_; exit 1 };" ^
+  "if (Test-Path $tmp) { Remove-Item -Recurse -Force $tmp }; Expand-Archive -Path $zip -DestinationPath $tmp -Force;" ^
+  "if (!(Test-Path $dest)) { New-Item -ItemType Directory -Path $dest | Out-Null };" ^
+  "Copy-Item -Path (Join-Path $tmp 'psicology-main\*') -Destination $dest -Recurse -Force;" ^
+  "Remove-Item -Force $zip -ErrorAction SilentlyContinue; Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue;"
+if %errorlevel% neq 0 (
+  echo [ERRO] Nao foi possivel baixar/atualizar automaticamente.
+  echo Baixe manualmente em: https://github.com/ANTONIOALGMAR/psicology ^(Code ^> Download ZIP^)
+  pause
+  exit /b 1
+)
+echo [OK] Sistema atualizado.
+
 :afterdownload
 
 REM 3) Iniciar
 cd /d "%INSTALL_DIR%"
-echo [..] Construindo e iniciando o PsiCare (pode levar alguns minutos na primeira vez)...
+echo [..] Construindo e iniciando o PsiCare (pode levar alguns minutos na primeira vez/atualizacao)...
 %COMPOSE% up --build -d
 if %errorlevel% neq 0 (
   echo [ERRO] Ocorreu um erro ao iniciar. Verifique se o Docker Desktop esta aberto.
@@ -121,9 +173,10 @@ if %errorlevel% neq 0 (
 
 echo.
 echo ==========================================
-echo   Sistema iniciado com sucesso!
+echo   Sistema instalado/atualizado e iniciado!
 echo   Abra no navegador: http://localhost:3000
 echo ==========================================
 echo Pasta do sistema: %INSTALL_DIR%
+echo Para atualizar depois: execute este script novamente.
 start http://localhost:3000
 pause

@@ -6,7 +6,7 @@ ZIP_URL="https://github.com/ANTONIOALGMAR/psicology/archive/refs/heads/main.zip"
 INSTALL_DIR="${PSICARE_DIR:-$HOME/PsiCare}"
 
 echo "=========================================="
-echo "  PsiCare - Instalação completa e execução"
+echo "  PsiCare - Instalação/Atualização e execução"
 echo "=========================================="
 echo ""
 
@@ -67,6 +67,30 @@ start_docker_if_possible() {
   esac
 }
 
+download_zip_to() {
+  local dest="$1"
+  if ! have_cmd curl || ! have_cmd unzip; then
+    echo "[ERRO] É necessário ter 'curl' e 'unzip' para baixar/atualizar sem git."
+    echo "Instale-os ou instale o git e execute novamente."
+    exit 1
+  fi
+  local tmpzip tmpdir
+  tmpzip="$(mktemp /tmp/psicare-XXXXXX.zip)"
+  tmpdir="$(mktemp -d /tmp/psicare-XXXXXX)"
+  echo "[..] Baixando versão mais recente..."
+  curl -fsSL "$ZIP_URL" -o "$tmpzip"
+  unzip -q "$tmpzip" -d "$tmpdir"
+  mkdir -p "$dest"
+  if have_cmd rsync; then
+    rsync -a --delete "$tmpdir/psicology-main/" "$dest/"
+  else
+    # substitui conteúdo preservando a pasta de instalação
+    find "$dest" -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true
+    cp -a "$tmpdir/psicology-main/." "$dest/"
+  fi
+  rm -rf "$tmpzip" "$tmpdir"
+}
+
 # 1) Verificar/instalar Docker
 if ! have_cmd docker; then
   install_docker
@@ -109,41 +133,50 @@ echo "[OK] Docker pronto."
 
 # 2) Baixar/atualizar o sistema
 mkdir -p "$(dirname "$INSTALL_DIR")"
-if [ -d "$INSTALL_DIR/.git" ]; then
-  echo "[..] Atualizando o sistema em $INSTALL_DIR ..."
-  git -C "$INSTALL_DIR" pull --ff-only || echo "[AVISO] Não foi possível atualizar automaticamente (continuando com a versão local)."
+if [ -d "$INSTALL_DIR/.git" ] && have_cmd git; then
+  echo "[..] Sistema já instalado (git). Baixando atualização em $INSTALL_DIR ..."
+  git -C "$INSTALL_DIR" remote set-url origin "$REPO_URL" >/dev/null 2>&1 || true
+  git -C "$INSTALL_DIR" fetch origin --prune
+  if git -C "$INSTALL_DIR" rev-parse --verify origin/main >/dev/null 2>&1; then
+    git -C "$INSTALL_DIR" checkout -f main >/dev/null 2>&1 || git -C "$INSTALL_DIR" checkout -B main origin/main
+    git -C "$INSTALL_DIR" reset --hard origin/main
+  else
+    echo "[AVISO] Branch origin/main não encontrada, tentando git pull..."
+    git -C "$INSTALL_DIR" pull --ff-only || true
+  fi
+  git -C "$INSTALL_DIR" clean -fd >/dev/null 2>&1 || true
+  echo "[OK] Sistema atualizado."
 elif [ -f "$INSTALL_DIR/docker-compose.yml" ]; then
-  echo "[OK] Sistema já encontrado em $INSTALL_DIR"
+  echo "[..] Sistema já instalado. Baixando atualização em $INSTALL_DIR ..."
+  download_zip_to "$INSTALL_DIR"
+  echo "[OK] Sistema atualizado."
+elif [ -d "$INSTALL_DIR" ] && [ "$(ls -A "$INSTALL_DIR" 2>/dev/null)" ]; then
+  echo "[..] Pasta existente encontrada. Baixando/atualizando sistema em $INSTALL_DIR ..."
+  download_zip_to "$INSTALL_DIR"
+  echo "[OK] Sistema atualizado."
 else
   echo "[..] Baixando o sistema para $INSTALL_DIR ..."
   if have_cmd git; then
     git clone "$REPO_URL" "$INSTALL_DIR"
-  elif have_cmd curl && have_cmd unzip; then
-    TMPZIP="$(mktemp /tmp/psicare-XXXXXX.zip)"
-    curl -L "$ZIP_URL" -o "$TMPZIP"
-    TMPDIR="$(mktemp -d /tmp/psicare-XXXXXX)"
-    unzip -q "$TMPZIP" -d "$TMPDIR"
-    mv "$TMPDIR"/psicology-main "$INSTALL_DIR"
-    rm -rf "$TMPZIP" "$TMPDIR"
   else
-    echo "[ERRO] Não foi possível baixar automaticamente (é necessário ter 'git' ou 'curl'+'unzip')."
-    echo "Baixe manualmente em: https://github.com/ANTONIOALGMAR/psicology (Code > Download ZIP)"
-    exit 1
+    download_zip_to "$INSTALL_DIR"
   fi
+  echo "[OK] Sistema instalado."
 fi
 
 # 3) Iniciar
 cd "$INSTALL_DIR"
-echo "[..] Construindo e iniciando o PsiCare (pode levar alguns minutos na primeira vez)..."
+echo "[..] Construindo e iniciando o PsiCare (pode levar alguns minutos na primeira vez/atualização)..."
 $COMPOSE up --build -d
 
 echo ""
 echo "=========================================="
-echo "  Sistema iniciado com sucesso!"
+echo "  Sistema instalado/atualizado e iniciado!"
 echo "  Abra no navegador: http://localhost:3000"
 echo "=========================================="
 echo "Pasta do sistema: $INSTALL_DIR"
 echo "Para parar: cd \"$INSTALL_DIR\" && $COMPOSE down"
+echo "Para atualizar depois: execute este script novamente."
 
 # Tentar abrir navegador
 if [ "$(uname -s)" = "Darwin" ]; then open "http://localhost:3000" >/dev/null 2>&1 || true; fi

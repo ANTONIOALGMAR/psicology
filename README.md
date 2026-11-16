@@ -3,7 +3,7 @@
 Plataforma web para acompanhamento psicológico com cadastro/login, diário do paciente (texto, ditado e áudio), vínculo paciente–psicólogo, testes psicológicos e vocacionais, e gestão de conta/segurança.
 
 > **Uso rápido (recomendado):** veja **[COMO-USAR.md](COMO-USAR.md)**. Com o Docker Desktop instalado, execute `iniciar.bat` (Windows) ou `./iniciar.sh` (Linux/Mac) e abra http://localhost:3000.  
-> Instalação automática (tenta instalar Docker e baixar do GitHub): [instalar-e-rodar.bat](https://raw.githubusercontent.com/ANTONIOALGMAR/psicology/main/instalar-e-rodar.bat) | [instalar-e-rodar.sh](https://raw.githubusercontent.com/ANTONIOALGMAR/psicology/main/instalar-e-rodar.sh)
+> Instalação/atualização automática (tenta instalar Docker, baixar do GitHub e, se já existir instalação, atualizar para a versão mais recente): [instalar-e-rodar.bat](https://raw.githubusercontent.com/ANTONIOALGMAR/psicology/main/instalar-e-rodar.bat) | [instalar-e-rodar.sh](https://raw.githubusercontent.com/ANTONIOALGMAR/psicology/main/instalar-e-rodar.sh)
 
 ## Acesso padrão
 - **Sistema:** http://localhost:3000
@@ -51,7 +51,7 @@ Sobe automaticamente: PostgreSQL + API (Spring Boot) + Web (React/Nginx).
 - `docs/ARQUITETURA.md` — arquitetura e roadmap
 - `docker-compose.yml` — execução completa (db + backend + frontend)
 - `iniciar.*` / `parar.*` — execução
-- `instalar-e-rodar.*` — instalação/execução automática
+- `instalar-e-rodar.*` — instalação, atualização e execução automática
 - `COMO-USAR.md` — guia para usuários
 
 ## Segurança, operação e observações

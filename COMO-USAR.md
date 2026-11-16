@@ -10,8 +10,8 @@ O PsiCare é um sistema de acompanhamento psicológico com diário (texto e áud
   - Senha: `Admin@123`
   - **Importante:** altere a senha após o primeiro acesso em **Conta → Alterar senha** (especialmente em produção).
 
-## Opção mais fácil (automática): 1 arquivo para instalar e rodar
-Os scripts abaixo tentam: **instalar/iniciar o Docker (quando possível)**, baixar o sistema do GitHub e executá-lo.
+## Opção mais fácil (automática): 1 arquivo para instalar, atualizar e rodar
+Os scripts abaixo tentam: **instalar/iniciar o Docker (quando possível)**, baixar o sistema do GitHub e executá-lo. **Se o sistema já estiver baixado** na pasta de instalação, ao executar o mesmo script novamente ele **baixa a atualização mais recente** e reinicia automaticamente.
 
 ### Windows
 1. Baixe: [instalar-e-rodar.bat](https://raw.githubusercontent.com/ANTONIOALGMAR/psicology/main/instalar-e-rodar.bat) (clique direito → "Salvar link como...", se necessário)
@@ -28,7 +28,7 @@ Os scripts abaixo tentam: **instalar/iniciar o Docker (quando possível)**, baix
    ```
 3. Se o Docker não estiver instalado, o script tentará instalá-lo (Linux: script oficial do Docker, podendo pedir `sudo`; Mac: via Homebrew, se disponível). Pode ser necessário reiniciar, abrir o Docker Desktop (Mac) e executar novamente.
 
-Por padrão o sistema é baixado em `~/PsiCare` (Linux/Mac) ou `%USERPROFILE%\PsiCare` (Windows). Você pode mudar com a variável `PSICARE_DIR`.
+Por padrão o sistema é baixado em `~/PsiCare` (Linux/Mac) ou `%USERPROFILE%\PsiCare` (Windows). Você pode mudar com a variável `PSICARE_DIR`. Para atualizar no futuro, basta executar o mesmo arquivo novamente.
 
 > **Observação:** instalação do Docker pode exigir permissões de administrador e reinicialização. Se não concluir automaticamente, instale o Docker Desktop em https://www.docker.com/products/docker-desktop/ e execute o script novamente.
 
@@ -53,9 +53,10 @@ Por padrão o sistema é baixado em `~/PsiCare` (Linux/Mac) ou `%USERPROFILE%\Ps
 3. **Psicólogo:** acesse **Pacientes** para vincular por e-mail e acompanhar diários/áudios, enviando feedback; use **Conta** para gerenciar seu perfil/senha.
 4. **Admin:** entre com a conta padrão e, se necessário, crie convites/perfis conforme a operação.
 
-## Como parar e iniciar novamente
+## Como parar, iniciar e atualizar
 - **Parar:** `parar.bat` (Windows) ou `./parar.sh` (Linux/Mac); ou `docker compose down` na pasta.
 - **Iniciar novamente:** `iniciar.bat` / `./iniciar.sh` (ou `docker compose up -d`).
+- **Atualizar para a versão mais recente:** execute novamente `instalar-e-rodar.bat` / `./instalar-e-rodar.sh` (ele detecta a instalação existente, baixa a atualização e reinicia o sistema).
 
 ## Problemas comuns
 - **Docker não encontrado / não está em execução:** instale e abra o Docker Desktop antes de iniciar.
