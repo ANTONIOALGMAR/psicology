@@ -18,6 +18,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -88,10 +90,22 @@ public class PsychologistController {
     }
 
     @GetMapping("/patients/{patientId}/journal")
-    public List<JournalController.JournalResponse> patientJournal(@AuthenticationPrincipal AppUserDetails principal, @PathVariable UUID patientId, HttpServletRequest request) {
+    public List<JournalController.JournalResponse> patientJournal(@AuthenticationPrincipal AppUserDetails principal,
+                                                                  @PathVariable UUID patientId,
+                                                                  @RequestParam(required = false) Integer page,
+                                                                  @RequestParam(required = false) Integer size,
+                                                                  HttpServletRequest request) {
         ensureLinked(principal.getId(), patientId);
         auditService.record(principal, "PATIENT_JOURNAL_VIEW", "JOURNAL", patientId.toString(), patientId, "Visualização de diário do paciente", request);
-        List<JournalEntry> entries = journalRepo.findByPatientId(patientId, Sort.by(Sort.Direction.DESC, "entryDate"));
+        List<JournalEntry> entries;
+        if (page != null || size != null) {
+            int p = page != null && page >= 0 ? page : 0;
+            int s = size != null && size > 0 ? Math.min(size, 200) : 50;
+            Page<JournalEntry> pg = journalRepo.findByPatientId(patientId, PageRequest.of(p, s, Sort.by(Sort.Direction.DESC, "entryDate")));
+            entries = pg.getContent();
+        } else {
+            entries = journalRepo.findByPatientId(patientId, Sort.by(Sort.Direction.DESC, "entryDate"));
+        }
         return journalController.toDtos(entries);
     }
 

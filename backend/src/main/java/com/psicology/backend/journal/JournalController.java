@@ -17,6 +17,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -60,8 +62,18 @@ public class JournalController {
     public record JournalResponse(UUID id, String title, String content, String mood, Instant entryDate, Instant createdAt, List<AttachmentResponse> attachments, List<CommentResponse> comments) {}
 
     @GetMapping
-    public List<JournalResponse> list(@AuthenticationPrincipal AppUserDetails principal) {
-        List<JournalEntry> entries = repo.findByPatientId(principal.getId(), Sort.by(Sort.Direction.DESC, "entryDate"));
+    public List<JournalResponse> list(@AuthenticationPrincipal AppUserDetails principal,
+                                      @RequestParam(required = false) Integer page,
+                                      @RequestParam(required = false) Integer size) {
+        List<JournalEntry> entries;
+        if (page != null || size != null) {
+            int p = page != null && page >= 0 ? page : 0;
+            int s = size != null && size > 0 ? Math.min(size, 200) : 50;
+            Page<JournalEntry> pg = repo.findByPatientId(principal.getId(), PageRequest.of(p, s, Sort.by(Sort.Direction.DESC, "entryDate")));
+            entries = pg.getContent();
+        } else {
+            entries = repo.findByPatientId(principal.getId(), Sort.by(Sort.Direction.DESC, "entryDate"));
+        }
         return toDtos(entries);
     }
 
