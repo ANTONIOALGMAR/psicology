@@ -1,57 +1,59 @@
 # PsiCare - Sistema de Atendimento Psicológico
 
-Plataforma web para acompanhamento psicológico com cadastro/login, diário do paciente (texto e ditado por voz), canal de testes e suporte a convites.
+Plataforma web para acompanhamento psicológico com cadastro/login, diário do paciente (texto, ditado e áudio), vínculo paciente–psicólogo, testes psicológicos e vocacionais, e gestão de conta/segurança.
 
-> **Para uso rápido (recomendado, inclusive para pessoas leigas):** veja o guia **[COMO-USAR.md](COMO-USAR.md)**. Com o Docker Desktop instalado, basta executar `iniciar.bat` (Windows) ou `./iniciar.sh` (Linux/Mac) e abrir http://localhost:3000.
+> **Uso rápido (recomendado):** veja **[COMO-USAR.md](COMO-USAR.md)**. Com o Docker Desktop instalado, execute `iniciar.bat` (Windows) ou `./iniciar.sh` (Linux/Mac) e abra http://localhost:3000.  
+> Instalação automática (tenta instalar Docker e baixar do GitHub): [instalar-e-rodar.bat](https://raw.githubusercontent.com/ANTONIOALGMAR/psicology/main/instalar-e-rodar.bat) | [instalar-e-rodar.sh](https://raw.githubusercontent.com/ANTONIOALGMAR/psicology/main/instalar-e-rodar.sh)
 
-## Execução fácil com Docker (1 comando)
+## Acesso padrão
+- **Sistema:** http://localhost:3000
+- **API:** http://localhost:8080 (saúde: `/actuator/health`)
+- **Administrador padrão:** `admin@psicare.com` / `Admin@123` (altere em **Conta → Alterar senha**)
+
+## Execução com Docker (1 comando)
 Pré-requisito: [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e em execução.
 
 ```bash
 docker compose up --build -d
 ```
-Ou use os atalhos:
-- **Windows:** `iniciar.bat` (para parar: `parar.bat`)
-- **Linux/Mac:** `./iniciar.sh` (para parar: `./parar.sh`)
+Atalhos:
+- **Windows:** `iniciar.bat` (parar: `parar.bat`)
+- **Linux/Mac:** `./iniciar.sh` (parar: `./parar.sh`)
 
-Acesse: **http://localhost:3000**
-
-Isso sobe automaticamente: PostgreSQL + API (Spring Boot) + Web (React/Nginx).
+Sobe automaticamente: PostgreSQL + API (Spring Boot) + Web (React/Nginx).
 
 ## Stack
 - **Backend:** Java 17, Spring Boot 3, Spring Security (JWT), Spring Data JPA, PostgreSQL, Flyway
 - **Frontend:** React + TypeScript + Vite, Tailwind CSS, React Router, TanStack Query, Axios
-- **Infra:** Docker Compose
+- **Infra:** Docker Compose (inclui volume para uploads/anexos)
 
-## Funcionalidades (MVP)
-- **Autenticação:** registro aberto (padrão paciente) e login com JWT
-- **Convites:** geração de convite (`POST /api/auth/invites`) e cadastro com código de convite
-- **Perfis:** `PATIENT`, `PSYCHOLOGIST`, `ADMIN` (base preparada)
-- **Diário do paciente:** criar, listar e excluir anotações (texto, título, humor, data) com histórico e ditado por voz no navegador (Web Speech API, quando disponível)
-- **Testes:** tela/canal de testes psicológicos e vocacionais e base de dados para evolução do motor de aplicação
-- **UI:** telas responsivas e estilizadas com Tailwind
+## Funcionalidades implementadas
+- **Autenticação e perfis:** registro aberto, login JWT, convites opcionais, perfis `PATIENT`, `PSYCHOLOGIST`, `ADMIN`, administrador padrão semeado.
+- **Diário completo:** criar/editar/excluir registros (texto, título, humor, data), ditado por voz (Web Speech API, quando disponível), gravação/upload/reprodução/remoção de áudio e anexos, busca e filtro por humor, organização por mês, comentários/feedback do profissional.
+- **Painel do psicólogo e vínculo:** vincular pacientes (por e-mail), visualizar diários/áudios/evolução dos vinculados e registrar feedback; auto-vínculo quando paciente se cadastra via convite criado por psicólogo.
+- **Motor de testes:** testes psicológicos e vocacionais com questões/opções, iniciar/continuar tentativa, salvar progresso, finalizar com pontuação e resumo, histórico de tentativas.
+- **Conta e segurança:** atualização de perfil (nome) e alteração de senha.
 
-## Execução para desenvolvimento (sem Docker completo da aplicação)
-1. Banco de dados: `docker compose up -d postgres` (ajuste a porta/URL se necessário) ou use o `docker-compose.yml` conforme seu ambiente.
-2. Backend: `cd backend && mvn spring-boot:run` (http://localhost:8080). Configurações em `backend/src/main/resources/application.yml` (suporta `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`).
-3. Frontend: `cd frontend && npm install && npm run dev` (http://localhost:5173 com proxy `/api`).
+## Execução para desenvolvimento
+1. Banco: `docker compose up -d postgres` (ou via compose completo).
+2. Backend: `cd backend && mvn spring-boot:run` (http://localhost:8080). Configurações em `backend/src/main/resources/application.yml` (`SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`, `APP_STORAGE_UPLOAD_DIR`, `JWT_SECRET`).
+3. Frontend: `cd frontend && npm install && npm run dev` (http://localhost:5173, proxy `/api`).
 
 ## API (principais endpoints)
-- `POST /api/auth/register` — cadastro (`name`, `email`, `password`, `inviteCode?`, `role?`)
-- `POST /api/auth/login` — login (`email`, `password`)
-- `GET /api/auth/me` — usuário autenticado
-- `POST /api/auth/invites` — criar convite (autenticado)
-- `GET /api/journal` — listar entradas
-- `POST /api/journal` — criar entrada (`content`, `title?`, `mood?`, `entryDate?`)
-- `PUT /api/journal/{id}` — atualizar entrada
-- `DELETE /api/journal/{id}` — remover entrada
+- **Auth:** `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`, `PUT /api/auth/me`, `POST /api/auth/change-password`, `POST /api/auth/invites`
+- **Diário (paciente):** `GET/POST /api/journal`, `PUT/DELETE /api/journal/{id}`, `POST /api/journal/{id}/attachments`, `GET/DELETE /api/journal/attachments/{id}` (+ `/file`)
+- **Psicólogo:** `GET /api/psychologist/patients`, `POST /api/psychologist/patients/link`, `GET /api/psychologist/patients/{patientId}/journal`, `POST /api/psychologist/journal/{entryId}/comments`, `GET /api/psychologist/attachments/{id}/file`
+- **Testes:** `GET /api/tests`, `GET /api/tests/{id}`, `POST /api/tests/{id}/attempts`, `GET /api/attempts/me`, `GET/POST /api/attempts/{id}/answers`, `POST /api/attempts/{id}/submit`
 
 ## Estrutura
 - `backend/` — API REST Spring Boot
 - `frontend/` — aplicação React
 - `docs/ARQUITETURA.md` — arquitetura e roadmap
 - `docker-compose.yml` — execução completa (db + backend + frontend)
-- `iniciar.*` / `parar.*` — atalhos de execução
+- `iniciar.*` / `parar.*` — execução
+- `instalar-e-rodar.*` — instalação/execução automática
+- `COMO-USAR.md` — guia para usuários
 
 ## Observações
-- Sistema lida com dados sensíveis. Antes de uso em produção, revise segurança, privacidade (LGPD), ética profissional, HTTPS, segredos e backups (o segredo JWT padrão é apenas para desenvolvimento).
+- Sistema lida com dados sensíveis. Antes de produção: revise LGPD/privacidade, ética profissional, HTTPS, segredos (`JWT_SECRET`), senhas padrão, backups e endurecimento de segurança.
+- Resultados de testes são instrumentos de apoio e devem ser interpretados por profissional qualificado.

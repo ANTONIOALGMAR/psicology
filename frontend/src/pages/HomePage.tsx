@@ -3,20 +3,39 @@ import { useAuth } from '../context/AuthContext'
 
 export default function HomePage() {
   const { user } = useAuth()
+  const isPsy = user?.role === 'PSYCHOLOGIST'
   return (
     <div className="space-y-6">
-      <section className="rounded-3xl bg-gradient-to-r from-brand-600 to-teal-500 text-white p-8 shadow-soft">
-        <h1 className="text-3xl font-bold mb-2">Olá, {user?.name?.split(' ')[0]} 👋</h1>
-        <p className="text-brand-50 max-w-2xl">Este é seu espaço seguro para registrar sentimentos, acompanhar sua evolução e realizar testes quando indicado pelo seu psicólogo.</p>
+      <section className="rounded-3xl bg-gradient-to-r from-brand-600 to-teal-500 text-white p-6 sm:p-8 shadow-soft">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2">Olá, {user?.name?.split(' ')[0]} 👋</h1>
+        <p className="text-brand-50 max-w-2xl">
+          {isPsy
+            ? 'Acompanhe seus pacientes vinculados, visualize registros do diário e ofereça feedback para apoiar o cuidado terapêutico.'
+            : 'Este é seu espaço seguro para registrar sentimentos, acompanhar sua evolução e realizar testes quando indicado pelo seu psicólogo.'}
+        </p>
       </section>
       <div className="grid md:grid-cols-3 gap-5">
-        <Card title="Diário de comportamento" desc="Anote ou fale sobre seu dia, emoções e acontecimentos importantes." to="/diario" cta="Abrir diário" color="bg-white" />
-        <Card title="Testes e vocação" desc="Acesse testes psicológicos e vocacionais disponibilizados para você." to="/testes" cta="Ver testes" color="bg-white" />
-        <Card title="Acompanhamento" desc="Seu psicólogo pode acompanhar seus registros vinculados para apoiar seu cuidado." to="/diario" cta="Ver registros" color="bg-brand-50" />
+        {isPsy ? (
+          <>
+            <Card title="Meus pacientes" desc="Veja pacientes vinculados, acesse diários e áudios, e acompanhe a evolução." to="/" cta="Abrir painel" color="bg-white" />
+            <Card title="Testes disponíveis" desc="Consulte os instrumentos psicológicos e vocacionais disponíveis na plataforma." to="/testes" cta="Ver testes" color="bg-white" />
+            <Card title="Minha conta" desc="Atualize seu perfil e altere sua senha com segurança." to="/conta" cta="Gerenciar conta" color="bg-brand-50" />
+          </>
+        ) : (
+          <>
+            <Card title="Diário de comportamento" desc="Anote, dite ou grave áudios sobre seu dia, emoções e acontecimentos importantes." to="/diario" cta="Abrir diário" color="bg-white" />
+            <Card title="Testes e vocação" desc="Realize testes psicológicos e vocacionais, salve progresso e acompanhe resultados." to="/testes" cta="Ver testes" color="bg-white" />
+            <Card title="Conta e segurança" desc="Atualize seu perfil e altere sua senha quando necessário." to="/conta" cta="Minha conta" color="bg-brand-50" />
+          </>
+        )}
       </div>
       <section className="glass rounded-3xl p-6">
-        <h2 className="font-semibold text-lg mb-2">Dica de bem-estar</h2>
-        <p className="text-slate-600">Reserve alguns minutos do seu dia para escrever no diário. Registrar pensamentos e comportamentos ajuda a identificar padrões e facilita o acompanhamento terapêutico.</p>
+        <h2 className="font-semibold text-lg mb-2">{isPsy ? 'Boas práticas' : 'Dica de bem-estar'}</h2>
+        <p className="text-slate-600">
+          {isPsy
+            ? 'Combine com seus pacientes o uso do diário e dos testes como instrumentos de apoio. Feedbacks claros e respeitosos fortalecem o vínculo terapêutico.'
+            : 'Reserve alguns minutos do seu dia para escrever no diário. Registrar pensamentos e comportamentos ajuda a identificar padrões e facilita o acompanhamento terapêutico.'}
+        </p>
       </section>
     </div>
   )
