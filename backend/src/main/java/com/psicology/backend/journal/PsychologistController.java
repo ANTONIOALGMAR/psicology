@@ -1,5 +1,6 @@
 package com.psicology.backend.journal;
 
+import com.psicology.backend.audit.AuditService;
 import com.psicology.backend.domain.comment.JournalComment;
 import com.psicology.backend.domain.comment.JournalCommentRepository;
 import com.psicology.backend.domain.journal.JournalAttachment;
@@ -13,6 +14,7 @@ import com.psicology.backend.domain.user.User;
 import com.psicology.backend.domain.user.UserRepository;
 import com.psicology.backend.security.AppUserDetails;
 import com.psicology.backend.storage.FileStorageService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.core.io.Resource;
@@ -41,8 +43,9 @@ public class PsychologistController {
     private final JournalCommentRepository commentRepo;
     private final FileStorageService storage;
     private final JournalController journalController;
+    private final AuditService auditService;
 
-    public PsychologistController(PatientLinkRepository linkRepo, UserRepository userRepository, JournalEntryRepository journalRepo, JournalAttachmentRepository attachmentRepo, JournalCommentRepository commentRepo, FileStorageService storage, JournalController journalController) {
+    public PsychologistController(PatientLinkRepository linkRepo, UserRepository userRepository, JournalEntryRepository journalRepo, JournalAttachmentRepository attachmentRepo, JournalCommentRepository commentRepo, FileStorageService storage, JournalController journalController, AuditService auditService) {
         this.linkRepo = linkRepo;
         this.userRepository = userRepository;
         this.journalRepo = journalRepo;
@@ -50,6 +53,7 @@ public class PsychologistController {
         this.commentRepo = commentRepo;
         this.storage = storage;
         this.journalController = journalController;
+        this.auditService = auditService;
     }
 
     public record PatientSummary(UUID id, String name, String email, String linkedAt) {}
@@ -65,7 +69,7 @@ public class PsychologistController {
     }
 
     @PostMapping("/patients/link")
-    public PatientSummary linkPatient(@AuthenticationPrincipal AppUserDetails principal, @RequestBody LinkRequest req) {
+    public PatientSummary linkPatient(@AuthenticationPrincipal AppUserDetails principal, @RequestBody LinkRequest req, HttpServletRequest request) {
         if (req.email() == null || req.email().isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "E-mail obrigatório");
         User psychologist = userRepository.findById(principal.getId()).orElseThrow();
         User patient = userRepository.findByEmail(req.email().toLowerCase())
@@ -79,18 +83,20 @@ public class PsychologistController {
         link.setPatient(patient);
         link.setStatus("ACTIVE");
         linkRepo.save(link);
+        auditService.record(principal, "PATIENT_LINKED", "PATIENT", patient.getId().toString(), patient.getId(), "Vínculo criado", request);
         return new PatientSummary(patient.getId(), patient.getName(), patient.getEmail(), link.getCreatedAt() != null ? link.getCreatedAt().toString() : null);
     }
 
     @GetMapping("/patients/{patientId}/journal")
-    public List<JournalController.JournalResponse> patientJournal(@AuthenticationPrincipal AppUserDetails principal, @PathVariable UUID patientId) {
+    public List<JournalController.JournalResponse> patientJournal(@AuthenticationPrincipal AppUserDetails principal, @PathVariable UUID patientId, HttpServletRequest request) {
         ensureLinked(principal.getId(), patientId);
+        auditService.record(principal, "PATIENT_JOURNAL_VIEW", "JOURNAL", patientId.toString(), patientId, "Visualização de diário do paciente", request);
         List<JournalEntry> entries = journalRepo.findByPatientId(patientId, Sort.by(Sort.Direction.DESC, "entryDate"));
         return journalController.toDtos(entries);
     }
 
     @PostMapping("/journal/{entryId}/comments")
-    public JournalController.CommentResponse addComment(@AuthenticationPrincipal AppUserDetails principal, @PathVariable UUID entryId, @Valid @RequestBody CommentRequest req) {
+    public JournalController.CommentResponse addComment(@AuthenticationPrincipal AppUserDetails principal, @PathVariable UUID entryId, @Valid @RequestBody CommentRequest req, HttpServletRequest request) {
         JournalEntry entry = journalRepo.findById(entryId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         ensureLinked(principal.getId(), entry.getPatient().getId());
         User author = userRepository.findById(principal.getId()).orElseThrow();
@@ -99,14 +105,16 @@ public class PsychologistController {
         c.setAuthor(author);
         c.setContent(req.content());
         JournalComment saved = commentRepo.save(c);
+        auditService.record(principal, "JOURNAL_COMMENT_CREATE", "JOURNAL_ENTRY", entryId.toString(), entry.getPatient().getId(), "Comentário adicionado", request);
         return new JournalController.CommentResponse(saved.getId(), author.getName(), author.getRole().name(), saved.getContent(), saved.getCreatedAt());
     }
 
     @GetMapping("/attachments/{attachmentId}/file")
-    public ResponseEntity<Resource> getAttachmentFile(@AuthenticationPrincipal AppUserDetails principal, @PathVariable UUID attachmentId) throws MalformedURLException {
+    public ResponseEntity<Resource> getAttachmentFile(@AuthenticationPrincipal AppUserDetails principal, @PathVariable UUID attachmentId, HttpServletRequest request) throws MalformedURLException {
         JournalAttachment a = attachmentRepo.findById(attachmentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         ensureLinked(principal.getId(), a.getEntry().getPatient().getId());
+        auditService.record(principal, "ATTACHMENT_VIEW", "JOURNAL_ATTACHMENT", attachmentId.toString(), a.getEntry().getPatient().getId(), "Acesso a anexo do paciente", request);
         Resource resource = storage.loadAsResource(a.getFilePath());
         String contentType = a.getMimeType() != null ? a.getMimeType() : "application/octet-stream";
         String filename = a.getOriginalName() != null ? a.getOriginalName() : "arquivo";

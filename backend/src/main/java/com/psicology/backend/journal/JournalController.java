@@ -12,6 +12,8 @@ import com.psicology.backend.domain.user.User;
 import com.psicology.backend.domain.user.UserRepository;
 import com.psicology.backend.security.AppUserDetails;
 import com.psicology.backend.storage.FileStorageService;
+import com.psicology.backend.audit.AuditService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.core.io.Resource;
@@ -40,14 +42,16 @@ public class JournalController {
     private final PatientLinkRepository linkRepo;
     private final UserRepository userRepository;
     private final FileStorageService storage;
+    private final AuditService auditService;
 
-    public JournalController(JournalEntryRepository repo, JournalAttachmentRepository attachmentRepo, JournalCommentRepository commentRepo, PatientLinkRepository linkRepo, UserRepository userRepository, FileStorageService storage) {
+    public JournalController(JournalEntryRepository repo, JournalAttachmentRepository attachmentRepo, JournalCommentRepository commentRepo, PatientLinkRepository linkRepo, UserRepository userRepository, FileStorageService storage, AuditService auditService) {
         this.repo = repo;
         this.attachmentRepo = attachmentRepo;
         this.commentRepo = commentRepo;
         this.linkRepo = linkRepo;
         this.userRepository = userRepository;
         this.storage = storage;
+        this.auditService = auditService;
     }
 
     public record JournalRequest(@NotBlank String content, String title, String mood, Instant entryDate) {}
@@ -112,15 +116,21 @@ public class JournalController {
 
     @GetMapping("/attachments/{attachmentId}/file")
     public ResponseEntity<Resource> getAttachmentFile(@AuthenticationPrincipal AppUserDetails principal,
-                                                      @PathVariable UUID attachmentId) throws MalformedURLException {
+                                                      @PathVariable UUID attachmentId,
+                                                      HttpServletRequest request) throws MalformedURLException {
         JournalAttachment a = attachmentRepo.findById(attachmentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         UUID uid = principal.getId();
         UUID patientId = a.getEntry().getPatient().getId();
+        boolean psychologistAccess = false;
         if (!patientId.equals(uid)) {
             boolean linked = principal.getUser().getRole() == Role.PSYCHOLOGIST
                     && linkRepo.existsByPsychologistIdAndPatientIdAndStatus(uid, patientId, "ACTIVE");
             if (!linked) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            psychologistAccess = true;
+        }
+        if (psychologistAccess) {
+            auditService.record(principal, "ATTACHMENT_VIEW", "JOURNAL_ATTACHMENT", attachmentId.toString(), patientId, "Acesso a anexo via diário", request);
         }
         Resource resource = storage.loadAsResource(a.getFilePath());
         String contentType = a.getMimeType() != null ? a.getMimeType() : "application/octet-stream";
