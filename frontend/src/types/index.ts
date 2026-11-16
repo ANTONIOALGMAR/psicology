@@ -11,3 +11,5 @@ export interface TestQuestion { id: string; position: number; prompt: string; ki
 export interface TestDetail { id: string; type: string; title: string; description: string; questions: TestQuestion[] }
 export interface AnswerView { questionId: string; optionId?: string; value?: number }
 export interface Attempt { id: string; testId: string; testTitle: string; status: string; score?: number; resultSummary?: string; startedAt: string; completedAt?: string; answers: AnswerView[] }
+
+export type PatientAttempt = Attempt

@@ -9,6 +9,9 @@ import com.psicology.backend.domain.journal.JournalEntry;
 import com.psicology.backend.domain.journal.JournalEntryRepository;
 import com.psicology.backend.domain.link.PatientLink;
 import com.psicology.backend.domain.link.PatientLinkRepository;
+import com.psicology.backend.domain.test.TestAnswerRepository;
+import com.psicology.backend.domain.test.TestAttempt;
+import com.psicology.backend.domain.test.TestAttemptRepository;
 import com.psicology.backend.domain.user.Role;
 import com.psicology.backend.domain.user.User;
 import com.psicology.backend.domain.user.UserRepository;
@@ -31,6 +34,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.net.MalformedURLException;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -46,8 +50,10 @@ public class PsychologistController {
     private final FileStorageService storage;
     private final JournalController journalController;
     private final AuditService auditService;
+    private final TestAttemptRepository attemptRepo;
+    private final TestAnswerRepository answerRepo;
 
-    public PsychologistController(PatientLinkRepository linkRepo, UserRepository userRepository, JournalEntryRepository journalRepo, JournalAttachmentRepository attachmentRepo, JournalCommentRepository commentRepo, FileStorageService storage, JournalController journalController, AuditService auditService) {
+    public PsychologistController(PatientLinkRepository linkRepo, UserRepository userRepository, JournalEntryRepository journalRepo, JournalAttachmentRepository attachmentRepo, JournalCommentRepository commentRepo, FileStorageService storage, JournalController journalController, AuditService auditService, TestAttemptRepository attemptRepo, TestAnswerRepository answerRepo) {
         this.linkRepo = linkRepo;
         this.userRepository = userRepository;
         this.journalRepo = journalRepo;
@@ -56,6 +62,8 @@ public class PsychologistController {
         this.storage = storage;
         this.journalController = journalController;
         this.auditService = auditService;
+        this.attemptRepo = attemptRepo;
+        this.answerRepo = answerRepo;
     }
 
     public record PatientSummary(UUID id, String name, String email, String linkedAt) {}
@@ -136,6 +144,22 @@ public class PsychologistController {
                 .contentType(MediaType.parseMediaType(contentType))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename.replace("\"", "") + "\"")
                 .body(resource);
+    }
+
+    public record AnswerView(UUID questionId, UUID optionId, Integer value) {}
+    public record AttemptView(UUID id, UUID testId, String testTitle, String status, Integer score, String resultSummary, Instant startedAt, Instant completedAt, List<AnswerView> answers) {}
+
+    @GetMapping("/patients/{patientId}/attempts")
+    public List<AttemptView> patientAttempts(@AuthenticationPrincipal AppUserDetails principal, @PathVariable UUID patientId, HttpServletRequest request) {
+        ensureLinked(principal.getId(), patientId);
+        auditService.record(principal, "PATIENT_ATTEMPTS_VIEW", "TEST_ATTEMPT", patientId.toString(), patientId, "Visualização de tentativas de testes do paciente", request);
+        return attemptRepo.findByPatientIdOrderByStartedAtDesc(patientId).stream().map(this::toAttemptView).toList();
+    }
+
+    private AttemptView toAttemptView(TestAttempt a) {
+        List<AnswerView> av = answerRepo.findByAttemptId(a.getId()).stream()
+                .map(x -> new AnswerView(x.getQuestion().getId(), x.getOption() != null ? x.getOption().getId() : null, x.getValue())).toList();
+        return new AttemptView(a.getId(), a.getTest().getId(), a.getTest().getTitle(), a.getStatus(), a.getScore(), a.getResultSummary(), a.getStartedAt(), a.getCompletedAt(), av);
     }
 
     private void ensureLinked(UUID psychologistId, UUID patientId) {

@@ -54,6 +54,9 @@ Sobe automaticamente: PostgreSQL + API (Spring Boot) + Web (React/Nginx).
 - `instalar-e-rodar.*` — instalação/execução automática
 - `COMO-USAR.md` — guia para usuários
 
-## Observações
-- Sistema lida com dados sensíveis. Antes de produção: revise LGPD/privacidade, ética profissional, HTTPS, segredos (`JWT_SECRET`), senhas padrão, backups e endurecimento de segurança.
-- Resultados de testes são instrumentos de apoio e devem ser interpretados por profissional qualificado.
+## Segurança, operação e observações
+- **Dados sensíveis (LGPD/ética):** antes de produção, revise consentimento/privacidade, políticas de retenção e acesso, e garanta HTTPS, segredos fortes (`JWT_SECRET`, `SPRING_DATASOURCE_PASSWORD`), troca da senha padrão do administrador, backups e hardening.
+- **Segurança implementada (base):** autenticação JWT, autorização por perfil/recurso (vínculo paciente–psicólogo), headers de segurança, CORS configurável (`APP_CORS_ALLOWED_ORIGIN_PATTERNS`), e auditoria de acessos a dados clínicos sensíveis (ex.: visualização de diário/anexos por psicólogo).
+- **Operação:** health check em `/actuator/health` (detalhes desabilitados por padrão); paginação opcional em listagens de diário via `?page=&size=`; limites de upload configurados.
+- **Testes automatizados:** backend (JUnit/MockMvc, perfil de teste com H2) em `backend/src/test` (`mvn test`); frontend (Vitest + Testing Library) em `frontend` (`npm test`).
+- **Interpretação clínica:** resultados de testes são instrumentos de apoio e devem ser interpretados por profissional qualificado.

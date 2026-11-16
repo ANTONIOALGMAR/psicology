@@ -118,8 +118,36 @@ export default function TestsPage() {
       </div>
 
       <div className="glass rounded-3xl p-6">
-        <h2 className="text-lg font-bold mb-3">Histórico de tentativas</h2>
+        <h2 className="text-lg font-bold mb-3">Histórico e evolução</h2>
         {attempts.length === 0 && <div className="text-slate-500 text-sm">Nenhuma tentativa ainda.</div>}
+        {(() => {
+          const completed = attempts.filter(a => a.status === 'COMPLETED')
+          const byTest = new Map<string, Attempt[]>()
+          for (const a of completed) {
+            const arr = byTest.get(a.testTitle) || []
+            arr.push(a)
+            byTest.set(a.testTitle, arr)
+          }
+          return byTest.size > 0 ? (
+            <div className="mb-4 space-y-3">
+              {Array.from(byTest.entries()).map(([title, list]) => {
+                const ordered = [...list].sort((a,b)=> new Date(a.completedAt || a.startedAt).getTime() - new Date(b.completedAt || b.startedAt).getTime())
+                const first = ordered[0]?.score ?? 0
+                const last = ordered[ordered.length-1]?.score ?? 0
+                const diff = last - first
+                return (
+                  <div key={title} className="rounded-2xl border border-slate-200 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                      <div className="font-semibold">{title}</div>
+                      {ordered.length > 1 && <div className={`text-xs font-semibold px-2 py-1 rounded-full ${diff > 0 ? 'bg-green-100 text-green-700' : diff < 0 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'}`}>Variação: {diff > 0 ? '+' : ''}{diff} pts</div>}
+                    </div>
+                    <div className="text-sm text-slate-600">Tentativas concluídas: {ordered.map(a => `${new Date(a.completedAt || a.startedAt).toLocaleDateString('pt-BR')} (${a.score} pts)`).join(' → ')}</div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : null
+        })()}
         <div className="space-y-2">
           {attempts.map(a => (
             <div key={a.id} className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3">
