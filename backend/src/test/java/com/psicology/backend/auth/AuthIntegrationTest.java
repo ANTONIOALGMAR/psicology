@@ -31,10 +31,10 @@ class AuthIntegrationTest {
         MvcResult regRes = mvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON).content(reg))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.token").isNotEmpty())
                 .andExpect(jsonPath("$.user.email").value(email))
                 .andReturn();
-        String token = mapper.readTree(regRes.getResponse().getContentAsString()).get("accessToken").asText();
+        String token = mapper.readTree(regRes.getResponse().getContentAsString()).get("token").asText();
 
         mvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

@@ -1,5 +1,5 @@
 INSERT INTO users (id, name, email, password_hash, role, enabled, created_at)
-VALUES (
+SELECT
     'aaaaaaaa-0000-0000-0000-000000000001',
     'Administrador',
     'admin@psicare.com',
@@ -7,5 +7,4 @@ VALUES (
     'ADMIN',
     TRUE,
     NOW()
-)
-ON CONFLICT (email) DO NOTHING;
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'admin@psicare.com');

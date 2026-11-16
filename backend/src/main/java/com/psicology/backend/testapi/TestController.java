@@ -50,6 +50,7 @@ public class TestController {
     }
 
     @GetMapping("/tests/{id}")
+    @Transactional(readOnly = true)
     public TestDetail getTest(@PathVariable UUID id) {
         PsychTest t = testRepo.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         List<TestQuestion> qs = questionRepo.findByTestIdOrderByPositionAsc(id);
@@ -75,11 +76,13 @@ public class TestController {
     }
 
     @GetMapping("/attempts/me")
+    @Transactional(readOnly = true)
     public List<AttemptDto> myAttempts(@AuthenticationPrincipal AppUserDetails principal) {
         return attemptRepo.findByPatientIdOrderByStartedAtDesc(principal.getId()).stream().map(this::toAttemptDto).toList();
     }
 
     @GetMapping("/attempts/{id}")
+    @Transactional(readOnly = true)
     public AttemptDto getAttempt(@AuthenticationPrincipal AppUserDetails principal, @PathVariable UUID id) {
         TestAttempt a = attemptRepo.findByIdAndPatientId(id, principal.getId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         return toAttemptDto(a);

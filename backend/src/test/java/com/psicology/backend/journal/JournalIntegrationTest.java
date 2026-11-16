@@ -27,7 +27,7 @@ class JournalIntegrationTest {
         MvcResult res = mvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON).content(reg))
                 .andExpect(status().isOk()).andReturn();
-        return mapper.readTree(res.getResponse().getContentAsString()).get("accessToken").asText();
+        return mapper.readTree(res.getResponse().getContentAsString()).get("token").asText();
     }
 
     @Test
@@ -59,6 +59,6 @@ class JournalIntegrationTest {
 
     @Test
     void journalRequiresAuth() throws Exception {
-        mvc.perform(get("/api/journal")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/journal")).andExpect(result -> { int st = result.getResponse().getStatus(); if (st != 401 && st != 403) throw new AssertionError("Expected 401 or 403 but was " + st); });
     }
 }

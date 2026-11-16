@@ -27,7 +27,7 @@ class PsychologistAndAccountIntegrationTest {
         MvcResult res = mvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON).content(reg))
                 .andExpect(status().isOk()).andReturn();
-        return mapper.readTree(res.getResponse().getContentAsString()).get("accessToken").asText();
+        return mapper.readTree(res.getResponse().getContentAsString()).get("token").asText();
     }
 
     @Test

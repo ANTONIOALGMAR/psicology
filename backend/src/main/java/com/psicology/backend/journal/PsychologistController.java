@@ -30,6 +30,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -71,6 +72,7 @@ public class PsychologistController {
     public record CommentRequest(@NotBlank String content) {}
 
     @GetMapping("/patients")
+    @Transactional(readOnly = true)
     public List<PatientSummary> patients(@AuthenticationPrincipal AppUserDetails principal) {
         return linkRepo.findByPsychologistIdAndStatus(principal.getId(), "ACTIVE").stream()
                 .map(l -> new PatientSummary(l.getPatient().getId(), l.getPatient().getName(), l.getPatient().getEmail(),
@@ -79,6 +81,7 @@ public class PsychologistController {
     }
 
     @PostMapping("/patients/link")
+    @Transactional
     public PatientSummary linkPatient(@AuthenticationPrincipal AppUserDetails principal, @RequestBody LinkRequest req, HttpServletRequest request) {
         if (req.email() == null || req.email().isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "E-mail obrigatório");
         User psychologist = userRepository.findById(principal.getId()).orElseThrow();
@@ -98,6 +101,7 @@ public class PsychologistController {
     }
 
     @GetMapping("/patients/{patientId}/journal")
+    @Transactional(readOnly = true)
     public List<JournalController.JournalResponse> patientJournal(@AuthenticationPrincipal AppUserDetails principal,
                                                                   @PathVariable UUID patientId,
                                                                   @RequestParam(required = false) Integer page,
@@ -150,6 +154,7 @@ public class PsychologistController {
     public record AttemptView(UUID id, UUID testId, String testTitle, String status, Integer score, String resultSummary, Instant startedAt, Instant completedAt, List<AnswerView> answers) {}
 
     @GetMapping("/patients/{patientId}/attempts")
+    @Transactional(readOnly = true)
     public List<AttemptView> patientAttempts(@AuthenticationPrincipal AppUserDetails principal, @PathVariable UUID patientId, HttpServletRequest request) {
         ensureLinked(principal.getId(), patientId);
         auditService.record(principal, "PATIENT_ATTEMPTS_VIEW", "TEST_ATTEMPT", patientId.toString(), patientId, "Visualização de tentativas de testes do paciente", request);

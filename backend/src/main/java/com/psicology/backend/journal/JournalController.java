@@ -25,6 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -62,6 +63,7 @@ public class JournalController {
     public record JournalResponse(UUID id, String title, String content, String mood, Instant entryDate, Instant createdAt, List<AttachmentResponse> attachments, List<CommentResponse> comments) {}
 
     @GetMapping
+    @Transactional(readOnly = true)
     public List<JournalResponse> list(@AuthenticationPrincipal AppUserDetails principal,
                                       @RequestParam(required = false) Integer page,
                                       @RequestParam(required = false) Integer size) {

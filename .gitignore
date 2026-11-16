@@ -12,3 +12,8 @@ frontend/dist/
 .env
 .DS_Store
 *.log
+
+# Local caches
+.m2-cache/
+frontend/tsconfig.tsbuildinfo
+frontend/*.tsbuildinfo
