@@ -1,0 +1,39 @@
+package com.psicology.backend.auth;
+
+import com.psicology.backend.domain.user.User;
+import com.psicology.backend.domain.user.UserRepository;
+import com.psicology.backend.dto.AuthDtos.*;
+import com.psicology.backend.security.AppUserDetails;
+import jakarta.validation.Valid;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/auth")
+public class AuthController {
+    private final AuthService authService;
+    private final UserRepository userRepository;
+
+    public AuthController(AuthService authService, UserRepository userRepository) {
+        this.authService = authService;
+        this.userRepository = userRepository;
+    }
+
+    @PostMapping("/register")
+    public AuthResponse register(@Valid @RequestBody RegisterRequest req) { return authService.register(req); }
+
+    @PostMapping("/login")
+    public AuthResponse login(@Valid @RequestBody LoginRequest req) { return authService.login(req); }
+
+    @GetMapping("/me")
+    public UserResponse me(@AuthenticationPrincipal AppUserDetails principal) {
+        User u = principal.getUser();
+        return new UserResponse(u.getId(), u.getName(), u.getEmail(), u.getRole());
+    }
+
+    @PostMapping("/invites")
+    public InviteResponse invite(@Valid @RequestBody InviteRequest req, @AuthenticationPrincipal AppUserDetails principal) {
+        User creator = userRepository.findById(principal.getId()).orElseThrow();
+        return authService.createInvite(req, creator);
+    }
+}

@@ -1,0 +1,14 @@
+# Backend
+backend/target/
+backend/uploads/
+*.iml
+.idea/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Env/OS
+.env
+.DS_Store
+*.log
