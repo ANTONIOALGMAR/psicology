@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -165,6 +166,36 @@ public class PsychologistController {
         List<AnswerView> av = answerRepo.findByAttemptId(a.getId()).stream()
                 .map(x -> new AnswerView(x.getQuestion().getId(), x.getOption() != null ? x.getOption().getId() : null, x.getValue())).toList();
         return new AttemptView(a.getId(), a.getTest().getId(), a.getTest().getTitle(), a.getStatus(), a.getScore(), a.getResultSummary(), a.getStartedAt(), a.getCompletedAt(), av);
+    }
+
+    @GetMapping(value = "/patients/{patientId}/attempts/export", produces = "text/csv")
+    @Transactional(readOnly = true)
+    public ResponseEntity<byte[]> exportPatientAttempts(@AuthenticationPrincipal AppUserDetails principal, @PathVariable UUID patientId, HttpServletRequest request) {
+        ensureLinked(principal.getId(), patientId);
+        auditService.record(principal, "PATIENT_ATTEMPTS_EXPORT", "TEST_ATTEMPT", patientId.toString(), patientId, "Exportação de tentativas de testes do paciente", request);
+        StringBuilder sb = new StringBuilder();
+        sb.append("test_title,status,started_at,completed_at,score,result_summary\n");
+        for (TestAttempt a : attemptRepo.findByPatientIdOrderByStartedAtDesc(patientId)) {
+            sb.append(csv(a.getTest() != null ? a.getTest().getTitle() : "")).append(',')
+              .append(csv(a.getStatus())).append(',')
+              .append(csv(a.getStartedAt() != null ? a.getStartedAt().toString() : "")).append(',')
+              .append(csv(a.getCompletedAt() != null ? a.getCompletedAt().toString() : "")).append(',')
+              .append(csv(a.getScore() != null ? a.getScore().toString() : "")).append(',')
+              .append(csv(a.getResultSummary()))
+              .append("\n");
+        }
+        byte[] bytes = sb.toString().getBytes(StandardCharsets.UTF_8);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"tentativas-paciente.csv\"")
+                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+                .body(bytes);
+    }
+
+    private String csv(String v) {
+        if (v == null) return "";
+        String s = v.replace("\"", "\"\"").replace("\n", " ").replace("\r", " ");
+        if (s.contains(",") || s.contains("\"") || s.contains(" ")) return "\"" + s + "\"";
+        return s;
     }
 
     private void ensureLinked(UUID psychologistId, UUID patientId) {

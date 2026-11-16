@@ -34,6 +34,18 @@ export default function PsychologistPage() {
 
   const withToken = (url: string) => token ? `${url}${url.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}` : url
 
+  const exportAttempts = async () => {
+    if (!selected) return
+    const res = await api.get(`/psychologist/patients/${selected.id}/attempts/export`, { responseType: 'blob' })
+    const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `tentativas-${selected.name.replace(/[^a-z0-9_-]+/gi,'_')}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   const attemptsByTest = useMemo(() => {
     const map = new Map<string, Attempt[]>()
     for (const a of attempts) {
@@ -79,7 +91,10 @@ export default function PsychologistPage() {
             </div>
 
             <div className="glass rounded-3xl p-5">
-              <h3 className="text-lg font-bold mb-3">Evolução em testes</h3>
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <h3 className="text-lg font-bold">Evolução em testes</h3>
+                <button onClick={exportAttempts} disabled={attempts.length === 0} className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold disabled:opacity-50">Exportar CSV</button>
+              </div>
               {loadingAttempts && <div className="text-slate-500 text-sm">Carregando tentativas...</div>}
               {!loadingAttempts && attempts.length === 0 && <div className="text-slate-500 text-sm">Nenhuma tentativa de teste registrada.</div>}
               <div className="space-y-4">
