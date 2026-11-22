@@ -23,18 +23,17 @@ spring:
 
 app:
   jwt:
-    secret: "change-me-in-production-use-a-long-random-secret-key-at-least-32-bytes"
+    secret: ${JWT_SECRET:change-me-in-production-use-a-long-random-secret-key-at-least-32-bytes}
     access-expiration-ms: 900000
     refresh-expiration-ms: 604800000
   storage:
     upload-dir: ./uploads
+  cors:
+    allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:*,http://127.0.0.1:*}
 
 logging:
   level:
     org.hibernate.SQL: warn
-
-  cors:
-    allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:*,http://127.0.0.1:*}
 
 management:
   endpoints:

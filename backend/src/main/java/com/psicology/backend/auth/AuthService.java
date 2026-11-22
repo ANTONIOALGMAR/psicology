@@ -8,7 +8,9 @@ import com.psicology.backend.domain.user.Role;
 import com.psicology.backend.domain.user.User;
 import com.psicology.backend.domain.user.UserRepository;
 import com.psicology.backend.dto.AuthDtos.*;
+import com.psicology.backend.privacy.PrivacyService;
 import com.psicology.backend.security.JwtService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,18 +29,20 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final PrivacyService privacyService;
 
-    public AuthService(UserRepository userRepository, InviteRepository inviteRepository, PatientLinkRepository patientLinkRepository, PasswordEncoder passwordEncoder, JwtService jwtService, AuthenticationManager authenticationManager) {
+    public AuthService(UserRepository userRepository, InviteRepository inviteRepository, PatientLinkRepository patientLinkRepository, PasswordEncoder passwordEncoder, JwtService jwtService, AuthenticationManager authenticationManager, PrivacyService privacyService) {
         this.userRepository = userRepository;
         this.inviteRepository = inviteRepository;
         this.patientLinkRepository = patientLinkRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
+        this.privacyService = privacyService;
     }
 
     @Transactional
-    public AuthResponse register(RegisterRequest req) {
+    public AuthResponse register(RegisterRequest req, HttpServletRequest request) {
         if (userRepository.existsByEmail(req.email())) throw new IllegalArgumentException("E-mail já cadastrado");
         Role role = req.role() != null ? req.role() : Role.PATIENT;
         Invite invite = null;
@@ -54,6 +58,7 @@ public class AuthService {
                 .passwordHash(passwordEncoder.encode(req.password()))
                 .role(role).enabled(true).build();
         userRepository.save(user);
+        privacyService.recordRegistrationConsents(user.getId(), req.acceptTerms(), req.acceptPrivacy(), request);
         if (invite != null) {
             invite.setUsedBy(user);
             invite.setUsedAt(Instant.now());

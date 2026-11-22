@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 
 public class AuthDtos {
     public record RegisterRequest(@NotBlank String name, @Email @NotBlank String email,
-                                  @Size(min = 6) String password, Role role, String inviteCode) {}
+                                  @Size(min = 6) String password, Role role, String inviteCode, Boolean acceptTerms, Boolean acceptPrivacy) {}
     public record LoginRequest(@Email @NotBlank String email, @NotBlank String password) {}
     public record AuthResponse(String token, UserResponse user) {}
     public record UserResponse(java.util.UUID id, String name, String email, Role role) {}

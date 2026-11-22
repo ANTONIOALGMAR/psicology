@@ -13,3 +13,14 @@ export interface AnswerView { questionId: string; optionId?: string; value?: num
 export interface Attempt { id: string; testId: string; testTitle: string; status: string; score?: number; resultSummary?: string; startedAt: string; completedAt?: string; answers: AnswerView[] }
 
 export type PatientAttempt = Attempt
+
+export interface Consent { id: string; kind: string; version: string; accepted: boolean; acceptedAt: string; createdAt: string }
+export interface PrivacyRequestView { id: string; userId: string; type: string; status: string; details?: string; requestedAt: string; resolvedAt?: string }
+export interface PrivacyOverview { consents: Consent[]; requests: PrivacyRequestView[] }
+
+export interface AdminUser { id: string; name: string; email: string; role: Role; enabled: boolean; createdAt: string }
+export interface Paged<T> { content: T[]; totalElements: number; totalPages: number; number: number; size: number }
+export interface AdminTest { id: string; type: string; title: string; description?: string; active: boolean; questionCount: number; createdAt: string }
+export interface AdminQuestion { id: string; position: number; prompt: string; kind: string; options: { id: string; label: string; value: number }[] }
+export interface AuditEvent { id: string; actorEmail?: string; actorRole?: string; action: string; resourceType?: string; resourceId?: string; targetUserId?: string; details?: string; ipAddress?: string; createdAt: string }
+export interface AdminOverview { users: number; patients: number; psychologists: number; admins: number; activeTests: number; pendingPrivacyRequests: number; auditEventsLast7Days: number }

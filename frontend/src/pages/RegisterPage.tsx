@@ -7,6 +7,7 @@ export default function RegisterPage() {
   const nav = useNavigate()
   const [sp] = useSearchParams()
   const [form, setForm] = useState({ name: '', email: '', password: '', inviteCode: sp.get('convite') || '', role: 'PATIENT' })
+  const [consents, setConsents] = useState({ terms: false, privacy: false })
   const [useInvite, setUseInvite] = useState(!!sp.get('convite'))
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -14,7 +15,8 @@ export default function RegisterPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setError(''); setLoading(true)
     try {
-      await register({ ...form, inviteCode: useInvite ? form.inviteCode : undefined })
+      await register({ ...form, inviteCode: useInvite ? form.inviteCode : undefined,
+        acceptTerms: consents.terms, acceptPrivacy: consents.privacy })
       nav('/')
     } catch (err: any) { setError(err?.response?.data?.message || err?.message || 'Não foi possível criar a conta.') }
     finally { setLoading(false) }
@@ -53,7 +55,17 @@ export default function RegisterPage() {
             </div>
           )}
         </div>
-        <button disabled={loading} className="w-full mt-6 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 transition disabled:opacity-60">{loading ? 'Criando conta...' : 'Criar conta'}</button>
+        <div className="mt-5 space-y-2 rounded-2xl border border-slate-200 p-4 bg-slate-50/60">
+          <label className="flex items-start gap-2 text-sm cursor-pointer">
+            <input type="checkbox" className="mt-0.5" required checked={consents.terms} onChange={e => setConsents({ ...consents, terms: e.target.checked })} />
+            <span>Li e aceito os termos de uso do sistema.</span>
+          </label>
+          <label className="flex items-start gap-2 text-sm cursor-pointer">
+            <input type="checkbox" className="mt-0.5" required checked={consents.privacy} onChange={e => setConsents({ ...consents, privacy: e.target.checked })} />
+            <span>Estou ciente da política de privacidade e do tratamento dos meus dados sensíveis (LGPD).</span>
+          </label>
+        </div>
+        <button disabled={loading || !consents.terms || !consents.privacy} className="w-full mt-6 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 transition disabled:opacity-60">{loading ? 'Criando conta...' : 'Criar conta'}</button>
         <p className="text-sm text-slate-600 mt-5 text-center">Já tem conta? <Link to="/login" className="text-brand-700 font-semibold">Entrar</Link></p>
       </form>
     </div>

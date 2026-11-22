@@ -94,3 +94,11 @@ Plataforma web para acompanhamento psicológico com:
 4. **Testes:** catálogo, motor de aplicação, respostas e resultados básicos
 5. **Vocacionais:** tipos/configurações específicas e relatórios
 6. **Qualidade:** testes automatizados, observabilidade, hardening de segurança e performance
+7. **Administração e LGPD (Evolução 10):** painel administrativo (usuários, catálogo, auditoria), consentimentos, portabilidade e solicitações de titulares
+
+### 3.5 Administração e privacidade (Evolução 10)
+- Consentimentos versionados por titular (`consents`) com registro em `audit_logs`.
+- Portabilidade via `GET /api/privacy/export` (JSON com diário, anexos, comentários, testes e consentimentos).
+- Solicitações de titulares (`privacy_requests`) com status `PENDING`/`APPROVED`/`REJECTED` gerenciadas pelo administrador.
+- Endpoints `/api/admin/**` protegidos por `ROLE_ADMIN`, com proteção contra rebaixamento do último administrador ativo.
+- CORS e segredo JWT passam a ser configuráveis por variáveis de ambiente (`APP_CORS_ALLOWED_ORIGIN_PATTERNS`, `JWT_SECRET`).

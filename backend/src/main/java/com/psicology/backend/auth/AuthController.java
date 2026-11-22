@@ -4,6 +4,7 @@ import com.psicology.backend.domain.user.User;
 import com.psicology.backend.domain.user.UserRepository;
 import com.psicology.backend.dto.AuthDtos.*;
 import com.psicology.backend.security.AppUserDetails;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +21,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public AuthResponse register(@Valid @RequestBody RegisterRequest req) { return authService.register(req); }
+    public AuthResponse register(@Valid @RequestBody RegisterRequest req, HttpServletRequest request) { return authService.register(req, request); }
 
     @PostMapping("/login")
     public AuthResponse login(@Valid @RequestBody LoginRequest req) { return authService.login(req); }

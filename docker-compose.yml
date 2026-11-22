@@ -3,9 +3,9 @@ services:
     image: postgres:16-alpine
     container_name: psicology-db
     environment:
-      POSTGRES_DB: psicology
-      POSTGRES_USER: psicology
-      POSTGRES_PASSWORD: psicology
+      POSTGRES_DB: ${POSTGRES_DB:-psicology}
+      POSTGRES_USER: ${POSTGRES_USER:-psicology}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-psicology}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -18,9 +18,11 @@ services:
     build: ./backend
     container_name: psicology-backend
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/psicology
-      SPRING_DATASOURCE_USERNAME: psicology
-      SPRING_DATASOURCE_PASSWORD: psicology
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/psicology}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-psicology}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-psicology}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production-use-a-long-random-secret-key-at-least-32-bytes}
+      APP_CORS_ALLOWED_ORIGIN_PATTERNS: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:-http://localhost:*,http://127.0.0.1:*}
       APP_STORAGE_UPLOAD_DIR: /app/uploads
     volumes:
       - backend_uploads:/app/uploads

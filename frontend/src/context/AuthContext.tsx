@@ -6,7 +6,7 @@ type AuthCtx = {
   user: User | null
   token: string | null
   login: (email: string, password: string) => Promise<void>
-  register: (data: {name:string;email:string;password:string;role?:string;inviteCode?:string}) => Promise<void>
+  register: (data: {name:string;email:string;password:string;role?:string;inviteCode?:string;acceptTerms?:boolean;acceptPrivacy?:boolean}) => Promise<void>
   logout: () => void
 }
 

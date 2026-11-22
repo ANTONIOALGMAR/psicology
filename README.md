@@ -33,6 +33,8 @@ Sobe automaticamente: PostgreSQL + API (Spring Boot) + Web (React/Nginx).
 - **Painel do psicólogo e vínculo:** vincular pacientes (por e-mail), visualizar diários/áudios/evolução dos vinculados e registrar feedback; auto-vínculo quando paciente se cadastra via convite criado por psicólogo.
 - **Motor de testes:** testes psicológicos e vocacionais com questões/opções, iniciar/continuar tentativa, salvar progresso, finalizar com pontuação e resumo, histórico de tentativas.
 - **Conta e segurança:** atualização de perfil (nome) e alteração de senha.
+- **Administração:** painel exclusivo para `ADMIN` com visão geral, gestão de usuários (perfil, status e redefinição de senha), catálogo de testes (criação, questões, ativação), solicitações de privacidade e trilha de auditoria.
+- **Privacidade (LGPD):** consentimentos no cadastro e na área do titular, exportação dos próprios dados em JSON, solicitação de cópia/exclusão e registro de auditoria das decisões.
 
 ## Execução para desenvolvimento
 1. Banco: `docker compose up -d postgres` (ou via compose completo).
@@ -44,11 +46,14 @@ Sobe automaticamente: PostgreSQL + API (Spring Boot) + Web (React/Nginx).
 - **Diário (paciente):** `GET/POST /api/journal`, `PUT/DELETE /api/journal/{id}`, `POST /api/journal/{id}/attachments`, `GET/DELETE /api/journal/attachments/{id}` (+ `/file`)
 - **Psicólogo:** `GET /api/psychologist/patients`, `POST /api/psychologist/patients/link`, `GET /api/psychologist/patients/{patientId}/journal`, `POST /api/psychologist/journal/{entryId}/comments`, `GET /api/psychologist/attachments/{id}/file`
 - **Testes:** `GET /api/tests`, `GET /api/tests/{id}`, `POST /api/tests/{id}/attempts`, `GET /api/attempts/me`, `GET/POST /api/attempts/{id}/answers`, `POST /api/attempts/{id}/submit`
+- **Privacidade:** `GET /api/privacy/me`, `POST /api/privacy/consents`, `POST /api/privacy/requests`, `GET /api/privacy/export`
+- **Admin (somente `ADMIN`):** `GET /api/admin/overview`, `GET/POST /api/admin/users`, `PUT /api/admin/users/{id}/role`, `PUT /api/admin/users/{id}/enabled`, `POST /api/admin/users/{id}/reset-password`, `GET/POST/PUT /api/admin/tests`, `GET/POST /api/admin/tests/{id}/questions`, `DELETE /api/admin/tests/{id}/questions/{questionId}`, `GET /api/admin/audit`, `GET /api/admin/privacy-requests`, `PUT /api/admin/privacy-requests/{id}/status`
 
 ## Estrutura
 - `backend/` — API REST Spring Boot
 - `frontend/` — aplicação React
 - `docs/ARQUITETURA.md` — arquitetura e roadmap
+- `docs/OPERACAO.md` — deploy, variáveis de ambiente, backup e LGPD
 - `docker-compose.yml` — execução completa (db + backend + frontend)
 - `iniciar.*` / `parar.*` — execução
 - `instalar-e-rodar.*` — instalação, atualização e execução automática

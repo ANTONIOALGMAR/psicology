@@ -5,17 +5,25 @@ const navPatient = [
   { to: '/', label: 'Início' },
   { to: '/diario', label: 'Meu Diário' },
   { to: '/testes', label: 'Testes' },
+  { to: '/privacidade', label: 'Privacidade' },
   { to: '/conta', label: 'Conta' },
 ]
 const navPsy = [
   { to: '/', label: 'Pacientes' },
   { to: '/testes', label: 'Testes' },
+  { to: '/privacidade', label: 'Privacidade' },
+  { to: '/conta', label: 'Conta' },
+]
+const navAdmin = [
+  { to: '/', label: 'Visão geral' },
+  { to: '/admin', label: 'Administração' },
+  { to: '/privacidade', label: 'Privacidade' },
   { to: '/conta', label: 'Conta' },
 ]
 
 export default function DashboardLayout() {
   const { user, logout } = useAuth()
-  const nav = user?.role === 'PSYCHOLOGIST' ? navPsy : navPatient
+  const nav = user?.role === 'ADMIN' ? navAdmin : user?.role === 'PSYCHOLOGIST' ? navPsy : navPatient
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-50 via-slate-50 to-teal-50">
       <header className="sticky top-0 z-10 border-b border-white/60 bg-white/80 backdrop-blur">

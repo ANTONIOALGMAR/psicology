@@ -6,4 +6,6 @@ import java.util.UUID;
 
 public interface PsychTestRepository extends JpaRepository<PsychTest, UUID> {
     List<PsychTest> findByActiveTrueOrderByCreatedAtDesc();
+    List<PsychTest> findAllByOrderByCreatedAtDesc();
+    long countByActiveTrue();
 }

@@ -16,13 +16,15 @@ Para atualizar uma instalação existente feita pelos scripts automáticos, exec
 - `JWT_SECRET`: segredo de assinatura JWT (obrigatório alterar em produção; mínimo 32 bytes).
 - `SPRING_DATASOURCE_*` / `POSTGRES_*`: credenciais e URL do banco.
 - `APP_CORS_ALLOWED_ORIGIN_PATTERNS`: origens CORS permitidas (ex.: domínio de produção).
+- `POSTGRES_*`: nome/banco/usuário/senha do PostgreSQL (o compose usa os mesmos valores para a API).
 - `APP_STORAGE_UPLOAD_DIR`: diretório de uploads (no Docker, persistido em volume `uploads`).
 
 ## Produção (recomendações)
 - **HTTPS/TLS:** publicar atrás de proxy reverso (Nginx/Traefik/Caddy) com certificado válido.
 - **Segredos:** não usar valores padrão; rotacionar `JWT_SECRET` e senhas; alterar senha do admin padrão (`admin@psicare.com`).
 - **Banco:** backups regulares do volume/dados PostgreSQL e testes de restauração; definir política de retenção.
-- **Privacidade/LGPD:** consentimento, minimização de dados, controle de acesso, trilha de auditoria (tabela `audit_logs`) e procedimentos de atendimento a titulares.
+- **Privacidade/LGPD:** consentimentos versionados no cadastro e em **Privacidade** (`consents`), exportação JSON pelo titular, solicitações em `privacy_requests` e trilha em `audit_logs`. Defina procedimento interno para aprovar/executar exportações e exclusões, respeitando obrigações legais de retenção.
+- **Administração:** o menu **Administração** só aparece para `ADMIN`; todas as alterações sensíveis são auditadas. Não rebaixe/desative o último administrador ativo.
 - **CORS:** restringir `APP_CORS_ALLOWED_ORIGIN_PATTERNS` ao(s) domínio(s) reais.
 - **Uploads:** definir limites, antivírus/varredura conforme política e armazenamento seguro.
 - **Observabilidade:** monitorar `/actuator/health` (detalhes desabilitados por padrão), logs de aplicação e alertas.
