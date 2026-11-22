@@ -9,3 +9,22 @@ body {
 .glass {
   @apply bg-white/80 backdrop-blur border border-white/60 shadow-soft;
 }
+
+/* Área segura: evita que o conteúdo fique sob a barra de status do iOS
+   e sobre a barra de gestos no Android/iOS. */
+.safe-header {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-bottom {
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  left: calc(1rem + env(safe-area-inset-left, 0px));
+  right: calc(1rem + env(safe-area-inset-right, 0px));
+}
+
+@media (min-width: 640px) {
+  .safe-bottom {
+    left: auto;
+    right: 1rem;
+  }
+}

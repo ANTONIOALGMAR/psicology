@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
-import type { Attempt, JournalEntry, PatientSummary, PsychologistDirectoryEntry, TransferHistoryEntry } from '../types'
+import type { Attempt, CrisisAlert, JournalEntry, PatientSummary, PsychologistDirectoryEntry, TransferHistoryEntry } from '../types'
 
 export default function PsychologistPage() {
   const qc = useQueryClient()
@@ -35,6 +35,10 @@ export default function PsychologistPage() {
     queryKey: ['psy-transfers', selected?.id],
     enabled: !!selected,
     queryFn: async () => (await api.get<TransferHistoryEntry[]>(`/psychologist/patients/${selected!.id}/transfers`)).data,
+  })
+  const alerts = useQuery({
+    queryKey: ['chat-alerts'],
+    queryFn: async () => (await api.get<CrisisAlert[]>('/psychologist/alerts')).data,
   })
   const transfer = useMutation({
     mutationFn: async () => {
@@ -107,6 +111,28 @@ export default function PsychologistPage() {
           <input id="link-email" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm mb-2" placeholder="email@paciente.com" value={email} onChange={e=>setEmail(e.target.value)} />
           <button onClick={() => email && link.mutate()} disabled={!email || link.isPending} className="w-full rounded-xl bg-brand-600 text-white py-2 text-sm font-semibold disabled:opacity-60">Vincular</button>
           {link.isError && <div className="text-xs text-red-600 mt-2">Não foi possível vincular (verifique o e-mail).</div>}
+        </div>
+
+        <div className="glass rounded-3xl p-5 border-red-100 bg-red-50/60">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="font-semibold text-red-900">Alertas de crise</h3>
+            <span className="text-xs rounded-full bg-red-100 text-red-800 px-2 py-0.5">{alerts.data?.length ?? 0}</span>
+          </div>
+          {!!alerts.data?.length ? (
+            <div className="mt-3 space-y-2">
+              {alerts.data.map(a => (
+                <div key={a.id} className="text-xs rounded-xl bg-white border border-red-100 px-3 py-2">
+                  <div className="font-semibold text-red-900">{a.patientName}</div>
+                  <div className="text-slate-600">{new Date(a.createdAt).toLocaleString('pt-BR')}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-600 mt-2">Nenhum alerta recente.</p>
+          )}
+          <p className="text-[11px] text-slate-500 mt-3">
+            O alerta mostra apenas paciente e data. O conteúdo da conversa fica no histórico restrito da auditoria.
+          </p>
         </div>
       </section>
       <section className="lg:col-span-3 space-y-4">

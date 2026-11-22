@@ -14,7 +14,7 @@ Plataforma web para acompanhamento psicológico com:
   - Spring Data JPA/Hibernate, PostgreSQL
   - Flyway (migrações), Spring Cache (Caffeine/Redis futuro)
   - Actuator + Micrometer (observabilidade)
-- **Frontend:** React 18 + TypeScript + Vite
+- **Frontend:** React 18 + TypeScript + Vite (PWA: manifest + service worker apenas para a casca da aplicação; nenhum dado `/api/**` em cache)
   - React Router, TanStack Query, React Hook Form + Zod
   - Estilização: CSS Modules ou Tailwind CSS + design system próprio (tokens, componentes)
   - Web Speech API / MediaRecorder para captura de voz (com transcrição progressiva)
@@ -62,6 +62,8 @@ Plataforma web para acompanhamento psicológico com:
 - `test_attempts` (test_id, patient_id, status, started_at, completed_at)
 - `test_answers` (attempt_id, question_id, value)
 - `test_results` (attempt_id, scores/json, summary)
+- `psychologist_availability` (psychologist_id, timezone, start_time, end_time, weekend_enabled, updated_at)
+- `chat_messages` (id, user_id, session_id, sender[USER|BOT], content, is_crisis, created_at)
 - `audit_logs` (ator, ação, recurso, timestamp, metadata)
 
 ## 5. API (exemplos de endpoints)
@@ -70,6 +72,7 @@ Plataforma web para acompanhamento psicológico com:
 - `POST /api/patients/me/journal/{id}/audio` (upload)
 - `GET /api/tests`, `POST /api/tests/{id}/attempts`, `POST /api/attempts/{id}/answers`, `POST /api/attempts/{id}/submit`
 - `GET /api/psychologist/patients`, `GET /api/psychologist/patients/{id}/journal`, `GET /api/psychologist/attempts/{id}/result`
+- `GET /api/chat/status`, `POST /api/chat/messages`, `GET /api/chat/history`, `GET/PUT /api/psychologist/availability`, `GET /api/psychologist/alerts`, `GET /api/admin/chat`
 
 ## 6. Performance e escalabilidade
 - Paginação e filtros em listagens (diário, testes, pacientes)
@@ -96,6 +99,7 @@ Plataforma web para acompanhamento psicológico com:
 6. **Qualidade:** testes automatizados, observabilidade, hardening de segurança e performance
 7. **Administração e LGPD (Evolução 10):** painel administrativo (usuários, catálogo, auditoria), consentimentos, portabilidade e solicitações de titulares
 8. **Agenda e transferência (Evolução 11):** agendamentos com duração/Modalidade/conflito, isolamento por psicólogo e transferência de vínculo com reatribuição da agenda futura
+9. **Orientador automático (Evolução 12):** disponibilidade do psicólogo, FAQ por regras, detecção de crise com encaminhamento, alertas sem conteúdo, histórico auditável e experiência web responsiva/PWA igual em PC, Android e iOS
 
 ### 3.5 Administração e privacidade (Evolução 10)
 - Consentimentos versionados por titular (`consents`) com registro em `audit_logs`.
@@ -110,3 +114,12 @@ Plataforma web para acompanhamento psicológico com:
 - Conflito de horário é verificado no backend (`findOverlaps`), desconsiderando agendamentos cancelados.
 - Transferência (`patient_links.status = TRANSFERRED`) reativa/cria vínculo com o destino e reatribui somente agendamentos futuros `SCHEDULED`/`CONFIRMED`; histórico clínico permanece intacto.
 - Toda transferência gera evento `PATIENT_TRANSFERRED` em `audit_logs` com ator, motivo e participantes.
+
+### 3.7 Orientador automático (Evolução 12)
+- Ativação por disponibilidade configurável (`timezone`, `start_time`, `end_time`, `weekend_enabled`); padrão 09h–18h, `America/Sao_Paulo`, de segunda a sexta.
+- `status` informa ao paciente se o profissional está dentro do horário e se o consentimento `PRIVACY` da versão atual está aceito.
+- Motor de regras local (sem serviços externos): temas de agenda, ansiedade, sono, estresse, raiva, medicação, trabalho/estudo e resposta padrão. Toda resposta reforça que é automática.
+- Detecção de crise por termos normalizados (sem acentuação/maiúsculas): resposta com CVV 188, SAMU 192, 190 e pronto-socorro; mensagem do usuário marcada como crise.
+- Auditoria: `CHAT_CRISIS_DETECTED` registra ator, sessão e o fato, **sem o conteúdo clínico**; o histórico completo (`chat_messages`) é listado apenas para `ADMIN` em `/api/admin/chat`.
+- Alerta do psicólogo (`GET /api/psychologist/alerts`) considera apenas vínculos `ACTIVE` dos últimos 30 dias e devolve id/paciente/data — nunca o texto.
+- Frontend: widget flutuante para pacientes, tela de disponibilidade e alertas para psicólogos, aba de conversas para administradores. Layout responsivo com área segura iOS e PWA (manifesto, ícones e service worker sem cache de API).

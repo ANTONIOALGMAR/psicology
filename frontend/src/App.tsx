@@ -11,6 +11,7 @@ import AccountPage from './pages/AccountPage'
 import PrivacyPage from './pages/PrivacyPage'
 import AdminPage from './pages/AdminPage'
 import AgendaPage from './pages/AgendaPage'
+import AvailabilityPage from './pages/AvailabilityPage'
 
 function Protected({ children }: { children: JSX.Element }) {
   const { token } = useAuth()
@@ -37,6 +38,7 @@ export default function App() {
         <Route path="pacientes" element={<PsychologistPage />} />
         <Route path="testes" element={<TestsPage />} />
         <Route path="agenda" element={<AgendaPage />} />
+        <Route path="disponibilidade" element={user?.role === 'PSYCHOLOGIST' ? <AvailabilityPage /> : <Navigate to="/" replace />} />
         <Route path="conta" element={<AccountPage />} />
         <Route path="privacidade" element={<PrivacyPage />} />
         <Route path="admin" element={user?.role === 'ADMIN' ? <AdminPage /> : <Navigate to="/" replace />} />

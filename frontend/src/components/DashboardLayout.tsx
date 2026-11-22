@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import ChatWidget from './ChatWidget'
 
 const navPatient = [
   { to: '/', label: 'Início' },
@@ -13,6 +14,7 @@ const navPsy = [
   { to: '/', label: 'Pacientes' },
   { to: '/testes', label: 'Testes' },
   { to: '/agenda', label: 'Agenda' },
+  { to: '/disponibilidade', label: 'Disponibilidade' },
   { to: '/privacidade', label: 'Privacidade' },
   { to: '/conta', label: 'Conta' },
 ]
@@ -29,7 +31,7 @@ export default function DashboardLayout() {
   const nav = user?.role === 'ADMIN' ? navAdmin : user?.role === 'PSYCHOLOGIST' ? navPsy : navPatient
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-50 via-slate-50 to-teal-50">
-      <header className="sticky top-0 z-10 border-b border-white/60 bg-white/80 backdrop-blur">
+      <header className="safe-header sticky top-0 z-10 border-b border-white/60 bg-white/80 backdrop-blur">
         <div className="mx-auto max-w-6xl px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <Link to="/" className="flex items-center gap-2 shrink-0">
@@ -54,7 +56,8 @@ export default function DashboardLayout() {
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:py-8"><Outlet /></main>
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:py-8 pb-28 sm:pb-8"><Outlet /></main>
+      {user?.role === 'PATIENT' && <ChatWidget />}
     </div>
   )
 }

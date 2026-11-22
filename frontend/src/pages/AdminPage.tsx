@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
-import type { AdminOverview, AdminQuestion, AdminTest, AdminUser, AuditEvent, Paged, PrivacyRequestView } from '../types'
+import type { AdminOverview, AdminQuestion, AdminTest, AdminUser, AuditEvent, ChatMessageView, Paged, PrivacyRequestView } from '../types'
 
-type Tab = 'overview' | 'users' | 'tests' | 'audit' | 'requests'
+type Tab = 'overview' | 'users' | 'tests' | 'audit' | 'requests' | 'chat'
 const TABS: { key: Tab; label: string }[] = [
   { key: 'overview', label: 'Visão geral' },
   { key: 'users', label: 'Usuários' },
   { key: 'tests', label: 'Catálogo de testes' },
   { key: 'requests', label: 'Solicitações LGPD' },
+  { key: 'chat', label: 'Conversas do orientador' },
   { key: 'audit', label: 'Auditoria' },
 ]
 const roleLabel = (r: string) => r === 'ADMIN' ? 'Admin' : r === 'PSYCHOLOGIST' ? 'Psicólogo(a)' : 'Paciente'
@@ -34,6 +35,7 @@ export default function AdminPage() {
 
   const [auditAction, setAuditAction] = useState('')
   const [auditPage, setAuditPage] = useState(0)
+  const [chatPage, setChatPage] = useState(0)
 
   const overview = useQuery({ queryKey: ['admin-overview'], queryFn: async () => (await api.get<AdminOverview>('/admin/overview')).data })
   const users = useQuery({
@@ -45,6 +47,11 @@ export default function AdminPage() {
   const audit = useQuery({
     queryKey: ['admin-audit', auditAction, auditPage],
     queryFn: async () => (await api.get<Paged<AuditEvent>>('/admin/audit', { params: { action: auditAction, page: auditPage, size: 20 } })).data,
+  })
+  const chat = useQuery({
+    queryKey: ['admin-chat', chatPage],
+    enabled: tab === 'chat',
+    queryFn: async () => (await api.get<Paged<ChatMessageView>>('/admin/chat', { params: { page: chatPage, size: 50 } })).data,
   })
   const questions = useQuery({
     queryKey: ['admin-questions', questionFor],
@@ -278,6 +285,40 @@ export default function AdminPage() {
             {requests.data?.length === 0 && <p className="text-sm text-slate-500 py-4">Nenhuma solicitação registrada.</p>}
           </div>
           <p className="text-xs text-slate-500 mt-4">A aprovação registra a decisão na auditoria. A execução efetiva de exportações/exclusões deve seguir o procedimento interno de governança de dados.</p>
+        </section>
+      )}
+
+      {tab === 'chat' && (
+        <section className="glass rounded-3xl p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+            <div>
+              <h2 className="text-lg font-semibold">Conversas do orientador automático</h2>
+              <p className="text-sm text-slate-600">Histórico completo para auditoria. Dados sensíveis — acesso restrito ao administrador.</p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-left text-slate-500 border-b border-slate-200">
+                <tr><th className="py-2">Data</th><th className="py-2">Paciente</th><th className="py-2">Remetente</th><th className="py-2">Mensagem</th></tr>
+              </thead>
+              <tbody>
+                {chat.data?.content.map(m => (
+                  <tr key={m.id} className="border-b border-slate-100 align-top">
+                    <td className="py-2 whitespace-nowrap">{fmt(m.createdAt)}</td>
+                    <td className="py-2">{m.userEmail || '—'}{m.crisis && <span className="ml-2 text-xs rounded-full bg-red-100 text-red-800 px-2 py-0.5">crise</span>}</td>
+                    <td className="py-2">{m.sender === 'USER' ? 'Paciente' : 'Automático'}</td>
+                    <td className="py-2 text-slate-700 whitespace-pre-wrap max-w-xl">{m.content}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {chat.data?.content.length === 0 && <p className="text-sm text-slate-500 py-4">Nenhuma conversa registrada.</p>}
+          </div>
+          <div className="flex items-center gap-3 mt-4 text-sm">
+            <button disabled={chatPage === 0} onClick={() => setChatPage(p => p - 1)} className="rounded-lg border border-slate-200 px-3 py-1 disabled:opacity-50">Anterior</button>
+            <span>Página {(chat.data?.number ?? 0) + 1} de {Math.max(chat.data?.totalPages ?? 1, 1)}</span>
+            <button disabled={chatPage + 1 >= (chat.data?.totalPages ?? 1)} onClick={() => setChatPage(p => p + 1)} className="rounded-lg border border-slate-200 px-3 py-1 disabled:opacity-50">Próxima</button>
+          </div>
         </section>
       )}
 

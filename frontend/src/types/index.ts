@@ -30,3 +30,10 @@ export interface AppointmentRequest { patientId?: string; psychologistId?: strin
 export interface PsychologistDirectoryEntry { id: string; name: string }
 export interface TransferResponse { patientId: string; fromPsychologistId: string; toPsychologistId: string; rescheduledAppointments: number }
 export interface TransferHistoryEntry { id: string; details: string; createdAt: string }
+
+export interface ChatStatus { psychologistOnline: boolean; psychologistName?: string; message: string; consentRequired: boolean }
+export interface ChatMessageView { id: string; sender: 'USER' | 'BOT'; content: string; crisis: boolean; createdAt: string; userEmail?: string | null }
+export interface ChatReply { sessionId: string; userMessage: ChatMessageView; botMessage: ChatMessageView; crisis: boolean }
+export interface Availability { psychologistId: string; timezone: string; startTime: string; endTime: string; weekendEnabled: boolean }
+export interface AvailabilityRequest { timezone: string; startTime: string; endTime: string; weekendEnabled: boolean }
+export interface CrisisAlert { id: string; patientId: string; patientName: string; createdAt: string }

@@ -1,6 +1,6 @@
 # Como usar o PsiCare (guia simples)
 
-O PsiCare é um sistema de acompanhamento psicológico com diário (texto e áudio), testes psicológicos/vocacionais, vínculo paciente–psicólogo e área de conta/segurança.
+O PsiCare é um sistema de acompanhamento psicológico com diário (texto e áudio), testes psicológicos/vocacionais, vínculo paciente–psicólogo, agenda de atendimentos, transferência de clientes, administração/LGPD e orientador automático para momentos fora do horário. Funciona igual no computador, Android e iOS pelo navegador (ou instalado como app).
 
 ## Acesso rápido (após iniciar)
 - **Sistema:** http://localhost:3000
@@ -46,12 +46,22 @@ Por padrão o sistema é baixado em `~/PsiCare` (Linux/Mac) ou `%USERPROFILE%\Ps
 - **Painel do psicólogo e vínculo:** psicólogos podem vincular pacientes (por e-mail de paciente já cadastrado) e visualizar diários/evolução, além de registrar feedback nos registros. Convites criados por psicólogos podem vincular automaticamente ao cadastro do paciente.
 - **Testes psicológicos e vocacionais:** motor completo de testes com questões, opções, salvar progresso, finalizar tentativa, pontuação/resumo e histórico de tentativas.
 - **Conta e segurança:** edição de perfil (nome) e alteração de senha.
+- **Agenda e transferência:** agendamentos com data/hora/duração e bloqueio de sobreposição; transferência de paciente com reatribuição da agenda futura e registro em auditoria.
+- **Administração e LGPD:** painel administrativo, consentimentos, exportação dos dados do titular, solicitações de cópia/exclusão e trilha de auditoria.
+- **Orientador automático:** botão **💬 Preciso de ajuda** para pacientes; o psicólogo configura sua disponibilidade e recebe alertas de crise (sem o conteúdo da mensagem). Em crise: 188 (CVV), 192 (SAMU), 190 ou pronto-socorro.
 
 ## Como usar (passo a passo)
 1. **Entrar:** acesse http://localhost:3000 e faça login (ou cadastre-se).
 2. **Paciente:** use **Meu Diário** para registrar texto/áudio e acompanhar feedback; use **Testes** para responder instrumentos; use **Conta** para alterar senha/perfil.
-3. **Psicólogo:** acesse **Pacientes** para vincular por e-mail e acompanhar diários/áudios, enviando feedback; use **Conta** para gerenciar seu perfil/senha.
-4. **Admin:** entre com a conta padrão e, se necessário, crie convites/perfis conforme a operação.
+3. **Psicólogo:** acesse **Pacientes** para vincular por e-mail e acompanhar diários/áudios, enviando feedback; use **Agenda** para marcar atendimentos, **Disponibilidade** para informar seu horário e **Pacientes → Alertas de crise** para acompanhar sinais de risco.
+4. **Paciente (ajuda):** aceite a política em **Privacidade** e toque em **💬 Preciso de ajuda** quando precisar de orientação fora do horário do profissional.
+5. **Admin:** entre com a conta padrão, crie/perfis, acompanhe LGPD, auditoria e o histórico de conversas em **Administração**.
+
+## Computador, Android e iOS
+Use o mesmo endereço e a mesma conta em qualquer aparelho. As telas se ajustam sozinhas (incluindo a área segura do iPhone) e as mesmas regras de acesso valem para pacientes e psicólogos.
+- **Android (Chrome):** menu ⋮ → **Instalar aplicativo** ou **Adicionar à tela inicial**.
+- **iPhone/iPad (Safari):** botão de compartilhar → **Adicionar à Tela de Início**.
+- O cache do app guarda só telas e ícones; mensagens e dados clínicos nunca ficam salvos no aparelho pelo service worker.
 
 ## Como parar, iniciar e atualizar
 - **Parar:** `parar.bat` (Windows) ou `./parar.sh` (Linux/Mac); ou `docker compose down` na pasta.

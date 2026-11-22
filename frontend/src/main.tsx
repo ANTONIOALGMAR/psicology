@@ -8,6 +8,14 @@ import { AuthProvider } from './context/AuthContext'
 
 const qc = new QueryClient()
 
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      // A falha no registro não impede o uso do sistema no navegador.
+    })
+  })
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={qc}>
