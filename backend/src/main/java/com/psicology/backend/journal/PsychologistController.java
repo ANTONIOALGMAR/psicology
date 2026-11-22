@@ -1,7 +1,11 @@
 package com.psicology.backend.journal;
 
 import com.psicology.backend.audit.AuditService;
+import com.psicology.backend.dto.AppointmentDtos.TransferRequest;
+import com.psicology.backend.dto.AppointmentDtos.TransferResponse;
+import com.psicology.backend.transfer.PatientTransferService;
 import com.psicology.backend.domain.comment.JournalComment;
+import com.psicology.backend.domain.audit.AuditLogRepository;
 import com.psicology.backend.domain.comment.JournalCommentRepository;
 import com.psicology.backend.domain.journal.JournalAttachment;
 import com.psicology.backend.domain.journal.JournalAttachmentRepository;
@@ -54,8 +58,10 @@ public class PsychologistController {
     private final AuditService auditService;
     private final TestAttemptRepository attemptRepo;
     private final TestAnswerRepository answerRepo;
+    private final PatientTransferService transferService;
+    private final AuditLogRepository auditRepo;
 
-    public PsychologistController(PatientLinkRepository linkRepo, UserRepository userRepository, JournalEntryRepository journalRepo, JournalAttachmentRepository attachmentRepo, JournalCommentRepository commentRepo, FileStorageService storage, JournalController journalController, AuditService auditService, TestAttemptRepository attemptRepo, TestAnswerRepository answerRepo) {
+    public PsychologistController(PatientLinkRepository linkRepo, UserRepository userRepository, JournalEntryRepository journalRepo, JournalAttachmentRepository attachmentRepo, JournalCommentRepository commentRepo, FileStorageService storage, JournalController journalController, AuditService auditService, TestAttemptRepository attemptRepo, TestAnswerRepository answerRepo, PatientTransferService transferService, AuditLogRepository auditRepo) {
         this.linkRepo = linkRepo;
         this.userRepository = userRepository;
         this.journalRepo = journalRepo;
@@ -66,6 +72,8 @@ public class PsychologistController {
         this.auditService = auditService;
         this.attemptRepo = attemptRepo;
         this.answerRepo = answerRepo;
+        this.transferService = transferService;
+        this.auditRepo = auditRepo;
     }
 
     public record PatientSummary(UUID id, String name, String email, String linkedAt) {}
@@ -99,6 +107,29 @@ public class PsychologistController {
         linkRepo.save(link);
         auditService.record(principal, "PATIENT_LINKED", "PATIENT", patient.getId().toString(), patient.getId(), "Vínculo criado", request);
         return new PatientSummary(patient.getId(), patient.getName(), patient.getEmail(), link.getCreatedAt() != null ? link.getCreatedAt().toString() : null);
+    }
+
+    @PostMapping("/patients/{patientId}/transfer")
+    @Transactional
+    public TransferResponse transferPatient(@PathVariable UUID patientId,
+                                            @Valid @RequestBody TransferRequest req,
+                                            @AuthenticationPrincipal AppUserDetails principal,
+                                            HttpServletRequest request) {
+        return transferService.transfer(patientId, req, principal, request);
+    }
+
+    @GetMapping("/patients/{patientId}/transfers")
+    @Transactional(readOnly = true)
+    public List<java.util.Map<String, Object>> transferHistory(@PathVariable UUID patientId,
+                                                               @AuthenticationPrincipal AppUserDetails principal) {
+        // Histórico restrito: apenas psicólogos que já tiveram vínculo com o paciente.
+        boolean related = linkRepo.findByPatientIdAndPsychologistId(patientId, principal.getId()).isPresent();
+        if (!related) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Sem vínculo com este paciente");
+        return auditRepo.findByTargetUserIdAndActionOrderByCreatedAtDesc(patientId, "PATIENT_TRANSFERRED").stream()
+                .map(l -> java.util.Map.<String, Object>of(
+                        "id", l.getId(), "details", l.getDetails() == null ? "" : l.getDetails(),
+                        "createdAt", l.getCreatedAt()))
+                .toList();
     }
 
     @GetMapping("/patients/{patientId}/journal")

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
-import type { Attempt, JournalEntry, PatientSummary } from '../types'
+import type { Attempt, JournalEntry, PatientSummary, PsychologistDirectoryEntry, TransferHistoryEntry } from '../types'
 
 export default function PsychologistPage() {
   const qc = useQueryClient()
@@ -9,6 +9,10 @@ export default function PsychologistPage() {
   const [selected, setSelected] = useState<PatientSummary | null>(null)
   const [email, setEmail] = useState('')
   const [commentText, setCommentText] = useState<Record<string, string>>({})
+  const [showTransfer, setShowTransfer] = useState(false)
+  const [targetId, setTargetId] = useState('')
+  const [reason, setReason] = useState('')
+  const [transferMsg, setTransferMsg] = useState('')
   const token = localStorage.getItem('token')
 
   const { data: journal = [], isLoading: loadingJournal } = useQuery({
@@ -20,6 +24,30 @@ export default function PsychologistPage() {
     queryKey: ['psy-attempts', selected?.id],
     queryFn: async () => (await api.get<Attempt[]>(`/psychologist/patients/${selected!.id}/attempts`)).data,
     enabled: !!selected
+  })
+
+  const directory = useQuery({
+    queryKey: ['psy-directory'],
+    enabled: showTransfer,
+    queryFn: async () => (await api.get<PsychologistDirectoryEntry[]>('/psychologist/directory')).data,
+  })
+  const transferHistory = useQuery({
+    queryKey: ['psy-transfers', selected?.id],
+    enabled: !!selected,
+    queryFn: async () => (await api.get<TransferHistoryEntry[]>(`/psychologist/patients/${selected!.id}/transfers`)).data,
+  })
+  const transfer = useMutation({
+    mutationFn: async () => {
+      if (!selected) return
+      await api.post(`/psychologist/patients/${selected.id}/transfer`, { toPsychologistId: targetId, reason: reason || undefined })
+    },
+    onSuccess: () => {
+      setTransferMsg('Cliente transferido. Os agendamentos futuros foram reatribuídos.'); setShowTransfer(false); setTargetId(''); setReason('')
+      setSelected(null)
+      qc.invalidateQueries({ queryKey: ['psy-patients'] })
+      qc.invalidateQueries({ queryKey: ['appointments'] })
+    },
+    onError: (e: any) => setTransferMsg(e?.response?.data?.message || 'Não foi possível transferir.'),
   })
 
   const link = useMutation({
@@ -86,8 +114,42 @@ export default function PsychologistPage() {
         {selected && (
           <>
             <div className="rounded-3xl bg-white border border-slate-100 p-5">
-              <h2 className="text-xl font-bold">Acompanhamento de {selected.name}</h2>
-              <p className="text-slate-500 text-sm">{selected.email}</p>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-bold">Acompanhamento de {selected.name}</h2>
+                  <p className="text-slate-500 text-sm">{selected.email}</p>
+                </div>
+                <button onClick={() => { setShowTransfer(!showTransfer); setTransferMsg('') }} className="rounded-xl border border-brand-200 bg-brand-50 text-brand-800 px-3 py-2 text-sm font-semibold">
+                  {showTransfer ? 'Cancelar transferência' : 'Transferir cliente'}
+                </button>
+              </div>
+
+              {showTransfer && (
+                <div className="mt-4 rounded-2xl border border-brand-200 bg-brand-50/60 p-4 space-y-3">
+                  <p className="text-sm text-slate-700">
+                    Ao transferir, o vínculo passa para o profissional escolhido e os <strong>agendamentos futuros</strong> são reatribuídos.
+                    O diário e os resultados de testes permanecem no histórico; a ação fica registrada na auditoria.
+                  </p>
+                  <label htmlFor="transfer-target" className="block text-sm font-medium text-slate-700">Novo psicólogo</label>
+                  <select id="transfer-target" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={targetId} onChange={e => setTargetId(e.target.value)}>
+                    <option value="">Selecione...</option>
+                    {directory.data?.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  </select>
+                  <label htmlFor="transfer-reason" className="block text-sm font-medium text-slate-700">Motivo (opcional)</label>
+                  <input id="transfer-reason" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={reason} onChange={e => setReason(e.target.value)} placeholder="Ex.: encaminhamento para especialidade" />
+                  <button onClick={() => transfer.mutate()} disabled={!targetId || transfer.isPending}
+                    className="rounded-xl bg-brand-600 text-white px-4 py-2 text-sm font-semibold disabled:opacity-60">Confirmar transferência</button>
+                </div>
+              )}
+              {transferMsg && <div className="mt-3 text-sm rounded-xl bg-slate-50 border border-slate-200 px-3 py-2">{transferMsg}</div>}
+              {!!transferHistory.data?.length && (
+                <details className="mt-3 text-sm">
+                  <summary className="cursor-pointer text-brand-700">Histórico de transferências</summary>
+                  <div className="mt-2 space-y-1 text-slate-600">
+                    {transferHistory.data.map(h => <div key={h.id}>{new Date(h.createdAt).toLocaleString('pt-BR')} — {h.details}</div>)}
+                  </div>
+                </details>
+              )}
             </div>
 
             <div className="glass rounded-3xl p-5">

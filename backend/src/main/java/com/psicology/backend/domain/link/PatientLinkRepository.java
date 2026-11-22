@@ -9,4 +9,6 @@ public interface PatientLinkRepository extends JpaRepository<PatientLink, UUID> 
     List<PatientLink> findByPsychologistIdAndStatus(UUID psychologistId, String status);
     Optional<PatientLink> findByPsychologistIdAndPatientIdAndStatus(UUID psychologistId, UUID patientId, String status);
     boolean existsByPsychologistIdAndPatientIdAndStatus(UUID psychologistId, UUID patientId, String status);
+    List<PatientLink> findByPatientIdAndStatus(UUID patientId, String status);
+    Optional<PatientLink> findByPatientIdAndPsychologistId(UUID patientId, UUID psychologistId);
 }

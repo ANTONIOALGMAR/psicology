@@ -24,3 +24,9 @@ export interface AdminTest { id: string; type: string; title: string; descriptio
 export interface AdminQuestion { id: string; position: number; prompt: string; kind: string; options: { id: string; label: string; value: number }[] }
 export interface AuditEvent { id: string; actorEmail?: string; actorRole?: string; action: string; resourceType?: string; resourceId?: string; targetUserId?: string; details?: string; ipAddress?: string; createdAt: string }
 export interface AdminOverview { users: number; patients: number; psychologists: number; admins: number; activeTests: number; pendingPrivacyRequests: number; auditEventsLast7Days: number }
+
+export interface Appointment { id: string; patientId: string; patientName: string; psychologistId: string; psychologistName: string; startsAt: string; endsAt: string; mode: string; status: string; title?: string; notes?: string; createdAt: string }
+export interface AppointmentRequest { patientId?: string; psychologistId?: string; startsAt: string; endsAt?: string; mode?: string; status?: string; title?: string; notes?: string }
+export interface PsychologistDirectoryEntry { id: string; name: string }
+export interface TransferResponse { patientId: string; fromPsychologistId: string; toPsychologistId: string; rescheduledAppointments: number }
+export interface TransferHistoryEntry { id: string; details: string; createdAt: string }

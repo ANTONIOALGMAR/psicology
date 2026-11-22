@@ -5,18 +5,21 @@ const navPatient = [
   { to: '/', label: 'Início' },
   { to: '/diario', label: 'Meu Diário' },
   { to: '/testes', label: 'Testes' },
+  { to: '/agenda', label: 'Agenda' },
   { to: '/privacidade', label: 'Privacidade' },
   { to: '/conta', label: 'Conta' },
 ]
 const navPsy = [
   { to: '/', label: 'Pacientes' },
   { to: '/testes', label: 'Testes' },
+  { to: '/agenda', label: 'Agenda' },
   { to: '/privacidade', label: 'Privacidade' },
   { to: '/conta', label: 'Conta' },
 ]
 const navAdmin = [
   { to: '/', label: 'Visão geral' },
   { to: '/admin', label: 'Administração' },
+  { to: '/agenda', label: 'Agenda' },
   { to: '/privacidade', label: 'Privacidade' },
   { to: '/conta', label: 'Conta' },
 ]

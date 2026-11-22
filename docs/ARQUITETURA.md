@@ -95,6 +95,7 @@ Plataforma web para acompanhamento psicológico com:
 5. **Vocacionais:** tipos/configurações específicas e relatórios
 6. **Qualidade:** testes automatizados, observabilidade, hardening de segurança e performance
 7. **Administração e LGPD (Evolução 10):** painel administrativo (usuários, catálogo, auditoria), consentimentos, portabilidade e solicitações de titulares
+8. **Agenda e transferência (Evolução 11):** agendamentos com duração/Modalidade/conflito, isolamento por psicólogo e transferência de vínculo com reatribuição da agenda futura
 
 ### 3.5 Administração e privacidade (Evolução 10)
 - Consentimentos versionados por titular (`consents`) com registro em `audit_logs`.
@@ -102,3 +103,10 @@ Plataforma web para acompanhamento psicológico com:
 - Solicitações de titulares (`privacy_requests`) com status `PENDING`/`APPROVED`/`REJECTED` gerenciadas pelo administrador.
 - Endpoints `/api/admin/**` protegidos por `ROLE_ADMIN`, com proteção contra rebaixamento do último administrador ativo.
 - CORS e segredo JWT passam a ser configuráveis por variáveis de ambiente (`APP_CORS_ALLOWED_ORIGIN_PATTERNS`, `JWT_SECRET`).
+
+### 3.6 Agenda e transferência (Evolução 11)
+- `appointments` (paciente, psicólogo, início, fim, modalidade, status, título/observações) com índice por profissional e paciente.
+- Consultas sempre filtram pelo titular: psicólogo só vê a própria agenda; paciente só vê a própria; administrador pode consultar com filtros.
+- Conflito de horário é verificado no backend (`findOverlaps`), desconsiderando agendamentos cancelados.
+- Transferência (`patient_links.status = TRANSFERRED`) reativa/cria vínculo com o destino e reatribui somente agendamentos futuros `SCHEDULED`/`CONFIRMED`; histórico clínico permanece intacto.
+- Toda transferência gera evento `PATIENT_TRANSFERRED` em `audit_logs` com ator, motivo e participantes.

@@ -2,7 +2,10 @@ package com.psicology.backend.admin;
 
 import com.psicology.backend.domain.user.Role;
 import com.psicology.backend.dto.AdminDtos.*;
+import com.psicology.backend.dto.AppointmentDtos.TransferRequest;
+import com.psicology.backend.dto.AppointmentDtos.TransferResponse;
 import com.psicology.backend.dto.PrivacyDtos.PrivacyRequestResponse;
+import com.psicology.backend.transfer.PatientTransferService;
 import com.psicology.backend.security.AppUserDetails;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -18,9 +21,19 @@ import java.util.UUID;
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
     private final AdminService adminService;
+    private final PatientTransferService transferService;
 
-    public AdminController(AdminService adminService) {
+    public AdminController(AdminService adminService, PatientTransferService transferService) {
         this.adminService = adminService;
+        this.transferService = transferService;
+    }
+
+    @PostMapping("/patients/{patientId}/transfer")
+    public TransferResponse transferPatient(@PathVariable UUID patientId,
+                                            @Valid @RequestBody TransferRequest req,
+                                            @AuthenticationPrincipal AppUserDetails actor,
+                                            HttpServletRequest request) {
+        return transferService.transfer(patientId, req, actor, request);
     }
 
     @GetMapping("/overview")

@@ -7,10 +7,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
     long countByCreatedAtAfter(Instant since);
+    List<AuditLog> findByTargetUserIdAndActionOrderByCreatedAtDesc(UUID targetUserId, String action);
 
     @Query("SELECT a FROM AuditLog a WHERE (:action IS NULL OR a.action = :action) AND " +
            "(:q IS NULL OR LOWER(a.actorEmail) LIKE LOWER(CONCAT('%', CONCAT(:q, '%'))) OR " +
