@@ -38,7 +38,7 @@ public class TestController {
     public record QuestionDto(UUID id, int position, String prompt, String kind, List<OptionDto> options) {}
     public record TestDetail(UUID id, String type, String title, String description, List<QuestionDto> questions) {}
     public record AnswerReq(UUID questionId, UUID optionId, String textAnswer) {}
-    public record AttemptDto(UUID id, UUID testId, String testTitle, String status, Integer score, String resultSummary, Instant startedAt, Instant completedAt, List<AnswerView> answers) {}
+    public record AttemptDto(UUID id, UUID testId, String testTitle, String status, Integer score, Integer maxScore, String resultSummary, String psychologistFeedback, Instant startedAt, Instant completedAt, List<AnswerView> answers) {}
     public record AnswerView(UUID questionId, UUID optionId, Integer value) {}
 
     @GetMapping("/tests")
@@ -121,30 +121,81 @@ public class TestController {
         TestAttempt attempt = attemptRepo.findByIdAndPatientId(id, principal.getId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if ("COMPLETED".equals(attempt.getStatus())) return toAttemptDto(attempt);
         List<TestAnswer> answers = answerRepo.findByAttemptId(attempt.getId());
+        List<TestQuestion> questions = questionRepo.findByTestIdOrderByPositionAsc(attempt.getTest().getId());
+        int maxScore = computeMaxScore(questions);
         int score = answers.stream().mapToInt(a -> a.getValue() != null ? a.getValue() : 0).sum();
         attempt.setScore(score);
+        attempt.setMaxScore(maxScore);
         attempt.setStatus("COMPLETED");
         attempt.setCompletedAt(Instant.now());
-        attempt.setResultSummary(buildSummary(attempt.getTest(), score, answers.size()));
+        attempt.setResultSummary(buildSummary(attempt.getTest(), score, maxScore, answers.size(), questions.size()));
+        attempt.setPsychologistFeedback(buildPsychologistFeedback(attempt.getTest(), score, maxScore, answers.size(), questions.size()));
         attemptRepo.save(attempt);
         return toAttemptDto(attempt);
     }
 
-    private String buildSummary(PsychTest test, int score, int answered) {
+    private int computeMaxScore(List<TestQuestion> questions) {
+        int total = 0;
+        for (TestQuestion q : questions) {
+            int qMax = q.getOptions() == null ? 0 : q.getOptions().stream().mapToInt(TestOption::getValue).max().orElse(0);
+            total += Math.max(0, qMax);
+        }
+        return total;
+    }
+
+    private String buildSummary(PsychTest test, int score, int maxScore, int answered, int totalQuestions) {
+        String range = maxScore > 0 ? " (" + score + "/" + maxScore + ")" : " (" + score + ")";
         if ("PSYCHOLOGICAL".equals(test.getType())) {
-            if (score >= 13) return "Bem-estar elevado no período avaliado (pontuação " + score + "). Continue cuidando de seus hábitos e rotina.";
-            if (score >= 9) return "Bem-estar moderado (pontuação " + score + "). Há pontos positivos e aspectos que merecem atenção.";
-            return "Sinais de bem-estar reduzido (pontuação " + score + "). Considere conversar com seu psicólogo sobre como você tem se sentido.";
+            double pct = maxScore > 0 ? (score * 100.0 / maxScore) : 0;
+            if (pct >= 75) return "Bem-estar elevado no período avaliado" + range + ". Continue cuidando de seus hábitos e rotina.";
+            if (pct >= 50) return "Bem-estar moderado" + range + ". Há pontos positivos e aspectos que merecem atenção.";
+            return "Sinais de bem-estar reduzido" + range + ". Considere conversar com seu psicólogo sobre como você tem se sentido.";
         }
         if ("VOCATIONAL".equals(test.getType())) {
-            return "Perfil vocacional exploratório registrado (pontuação total " + score + ", " + answered + " respostas). Seus interesses indicam áreas a aprofundar; discuta o resultado com um profissional para orientação detalhada.";
+            return "Perfil vocacional exploratório registrado" + range + ", " + answered + "/" + totalQuestions + " respostas. Discuta o resultado com um profissional para orientação detalhada.";
         }
-        return "Teste concluído. Pontuação: " + score + ".";
+        return "Teste concluído. Pontuação: " + score + (maxScore > 0 ? "/" + maxScore : "") + ".";
+    }
+
+    private String buildPsychologistFeedback(PsychTest test, int score, int maxScore, int answered, int totalQuestions) {
+        String instrument = test.getTitle() != null ? test.getTitle() : "Instrumento";
+        String typeLabel = "PSYCHOLOGICAL".equals(test.getType()) ? "autoavaliação psicológica" : "VOCATIONAL".equals(test.getType()) ? "mapeamento vocacional exploratório" : "instrumento de apoio";
+        double pct = maxScore > 0 ? (score * 100.0 / maxScore) : 0;
+        String band;
+        String clinicalNote;
+        if ("PSYCHOLOGICAL".equals(test.getType())) {
+            if (pct >= 75) { band = "Faixa alta/positiva"; clinicalNote = "Indícios de bem-estar preservado no recorte avaliado. Reforçar fatores de proteção, rotina e estratégias já eficazes."; }
+            else if (pct >= 50) { band = "Faixa moderada/atenção"; clinicalNote = "Há sinais mistos. Vale explorar áreas de estresse, sono, suporte social e funcionamento diário nas sessões."; }
+            else { band = "Faixa baixa/alerta clínico"; clinicalNote = "Sinais de sofrimento ou bem-estar reduzido. Priorizar escuta qualificada, avaliação de risco e plano de cuidado individualizado."; }
+        } else if ("VOCATIONAL".equals(test.getType())) {
+            if (pct >= 66) { band = "Interesses amplos/definidos"; clinicalNote = "O paciente apresenta respostas consistentes com interesses mais claros. Aprofundar valores, habilidades e contexto de vida para decisão profissional."; }
+            else if (pct >= 33) { band = "Interesses em exploração"; clinicalNote = "Perfil indica exploração em andamento. Usar o resultado como ponto de partida para entrevista vocacional e investigação de áreas de interesse."; }
+            else { band = "Interesses iniciais/pouco definidos"; clinicalNote = "Resultado sugere baixa definição no momento. Investigar barreiras, autoconhecimento, expectativas familiares e experiências prévias."; }
+        } else {
+            band = "Resultado registrado"; clinicalNote = "Interpretar junto ao histórico clínico e contexto atual do paciente.";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("Respaldo do teste: ").append(instrument).append(" (").append(typeLabel).append(").\n");
+        if (test.getDescription() != null && !test.getDescription().isBlank()) sb.append("Objetivo: ").append(test.getDescription().trim()).append("\n");
+        sb.append("Pontuação: ").append(score).append(maxScore > 0 ? "/" + maxScore : "").append(" (").append(String.format(Locale.forLanguageTag("pt-BR"), "%.0f", pct)).append("%)");
+        sb.append(" | Respostas: ").append(answered).append("/").append(totalQuestions).append(".\n");
+        sb.append("Faixa interpretativa: ").append(band).append(".\n");
+        sb.append("Leitura para o psicólogo: ").append(clinicalNote).append("\n");
+        sb.append("Observação ética: resultado de instrumento de apoio, não constitui diagnóstico isolado. Interpretar com entrevista clínica, história e contexto do paciente.");
+        return sb.toString();
     }
 
     private AttemptDto toAttemptDto(TestAttempt a) {
         List<AnswerView> av = answerRepo.findByAttemptId(a.getId()).stream()
                 .map(x -> new AnswerView(x.getQuestion().getId(), x.getOption() != null ? x.getOption().getId() : null, x.getValue())).toList();
-        return new AttemptDto(a.getId(), a.getTest().getId(), a.getTest().getTitle(), a.getStatus(), a.getScore(), a.getResultSummary(), a.getStartedAt(), a.getCompletedAt(), av);
+        Integer maxScore = a.getMaxScore();
+        String feedback = a.getPsychologistFeedback();
+        if ("COMPLETED".equals(a.getStatus()) && (feedback == null || feedback.isBlank())) {
+            List<TestQuestion> questions = questionRepo.findByTestIdOrderByPositionAsc(a.getTest().getId());
+            maxScore = computeMaxScore(questions);
+            int score = a.getScore() != null ? a.getScore() : 0;
+            feedback = buildPsychologistFeedback(a.getTest(), score, maxScore, av.size(), questions.size());
+        }
+        return new AttemptDto(a.getId(), a.getTest().getId(), a.getTest().getTitle(), a.getStatus(), a.getScore(), maxScore, a.getResultSummary(), feedback, a.getStartedAt(), a.getCompletedAt(), av);
     }
 }

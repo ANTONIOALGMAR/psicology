@@ -10,7 +10,7 @@ export interface TestOption { id: string; label: string; value: number }
 export interface TestQuestion { id: string; position: number; prompt: string; kind: string; options: TestOption[] }
 export interface TestDetail { id: string; type: string; title: string; description: string; questions: TestQuestion[] }
 export interface AnswerView { questionId: string; optionId?: string; value?: number }
-export interface Attempt { id: string; testId: string; testTitle: string; status: string; score?: number; resultSummary?: string; startedAt: string; completedAt?: string; answers: AnswerView[] }
+export interface Attempt { id: string; testId: string; testTitle: string; status: string; score?: number; maxScore?: number; resultSummary?: string; psychologistFeedback?: string; startedAt: string; completedAt?: string; answers: AnswerView[] }
 
 export type PatientAttempt = Attempt
 

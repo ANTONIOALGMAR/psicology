@@ -21,6 +21,10 @@ public class TestAttempt {
     private Integer score;
     @Column(name = "result_summary", columnDefinition = "text")
     private String resultSummary;
+    @Column(name = "psychologist_feedback", columnDefinition = "text")
+    private String psychologistFeedback;
+    @Column(name = "max_score")
+    private Integer maxScore;
     @Column(name = "started_at", nullable = false)
     private Instant startedAt;
     @Column(name = "completed_at")
@@ -40,6 +44,10 @@ public class TestAttempt {
     public void setScore(Integer score) { this.score = score; }
     public String getResultSummary() { return resultSummary; }
     public void setResultSummary(String resultSummary) { this.resultSummary = resultSummary; }
+    public String getPsychologistFeedback() { return psychologistFeedback; }
+    public void setPsychologistFeedback(String psychologistFeedback) { this.psychologistFeedback = psychologistFeedback; }
+    public Integer getMaxScore() { return maxScore; }
+    public void setMaxScore(Integer maxScore) { this.maxScore = maxScore; }
     public Instant getStartedAt() { return startedAt; }
     public void setStartedAt(Instant startedAt) { this.startedAt = startedAt; }
     public Instant getCompletedAt() { return completedAt; }

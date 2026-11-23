@@ -189,23 +189,32 @@ export default function PsychologistPage() {
                 {attemptsByTest.map(([title, list]) => (
                   <div key={title} className="rounded-2xl border border-slate-200 p-4">
                     <div className="font-semibold mb-2">{title}</div>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {list.map(a => (
-                        <div key={a.id} className="flex flex-wrap items-center justify-between gap-2 text-sm rounded-xl bg-slate-50 px-3 py-2">
-                          <div>
-                            <span className="font-medium">{new Date(a.startedAt).toLocaleString('pt-BR')}</span>
-                            <span className="text-slate-500"> · {a.status === 'COMPLETED' ? 'Concluído' : 'Em andamento'}</span>
+                        <div key={a.id} className="text-sm rounded-xl bg-slate-50 px-3 py-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                              <span className="font-medium">{new Date(a.startedAt).toLocaleString('pt-BR')}</span>
+                              <span className="text-slate-500"> · {a.status === 'COMPLETED' ? 'Concluído' : 'Em andamento'}</span>
+                            </div>
+                            <div className="text-brand-700 font-semibold">
+                              {a.status === 'COMPLETED' ? <>Pontuação: {a.score}{a.maxScore ? `/${a.maxScore}` : ''}</> : '—'}
+                            </div>
                           </div>
-                          <div className="text-slate-700">
-                            {a.status === 'COMPLETED' ? <><span className="font-semibold">Pontuação: {a.score}</span>{a.resultSummary ? <span className="text-slate-500"> — {a.resultSummary}</span> : null}</> : '—'}
-                          </div>
+                          {a.resultSummary && <p className="text-slate-600 mt-2">{a.resultSummary}</p>}
+                          {a.psychologistFeedback && (
+                            <details className="mt-3 rounded-xl border border-brand-100 bg-brand-50/60 p-3" open>
+                              <summary className="cursor-pointer font-semibold text-brand-900">Feedback para o psicólogo (respaldo do teste)</summary>
+                              <p className="mt-2 text-slate-700 whitespace-pre-wrap leading-relaxed">{a.psychologistFeedback}</p>
+                            </details>
+                          )}
                         </div>
                       ))}
                     </div>
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-slate-500 mt-3">Resultados são instrumentos de apoio e devem ser interpretados por profissional qualificado.</p>
+              <p className="text-xs text-slate-500 mt-3">Resultados são instrumentos de apoio e devem ser interpretados por profissional qualificado; o feedback abaixo oferece respaldo técnico para a leitura clínica.</p>
             </div>
 
             <div className="space-y-4">
