@@ -23,7 +23,7 @@ class JournalIntegrationTest {
 
     private String registerAndToken(String prefix) throws Exception {
         String email = prefix + UUID.randomUUID() + "@test.com";
-        String reg = "{\"name\":\"" + prefix + "\",\"email\":\"" + email + "\",\"password\":\"segredo1\",\"role\":\"PATIENT\"}";
+        String reg = "{\"name\":\"" + prefix + "\",\"email\":\"" + email + "\",\"password\":\"Senha@123\",\"role\":\"PATIENT\"}";
         MvcResult res = mvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON).content(reg))
                 .andExpect(status().isOk()).andReturn();

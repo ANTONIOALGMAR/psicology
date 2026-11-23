@@ -32,7 +32,7 @@ class ChatIntegrationTest {
         String email = role.toLowerCase() + UUID.randomUUID() + "@test.com";
         MvcResult res = mvc.perform(post("/api/admin/users").header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"User " + role + "\",\"email\":\"" + email + "\",\"password\":\"senha12345\",\"role\":\"" + role + "\"}"))
+                        .content("{\"name\":\"User " + role + "\",\"email\":\"" + email + "\",\"password\":\"Senha@12345\",\"role\":\"" + role + "\"}"))
                 .andExpect(status().isOk()).andReturn();
         return mapper.readTree(res.getResponse().getContentAsString()).get("id").asText() + "|" + email;
     }
@@ -42,8 +42,8 @@ class ChatIntegrationTest {
         String admin = token("admin@psicare.com", "Admin@123");
         String[] psy = createUser(admin, "PSYCHOLOGIST").split("\\|");
         String[] patient = createUser(admin, "PATIENT").split("\\|");
-        String psyToken = token(psy[1], "senha12345");
-        String patientToken = token(patient[1], "senha12345");
+        String psyToken = token(psy[1], "Senha@12345");
+        String patientToken = token(patient[1], "Senha@12345");
 
         mvc.perform(post("/api/psychologist/patients/link").header("Authorization", "Bearer " + psyToken)
                         .contentType(MediaType.APPLICATION_JSON)

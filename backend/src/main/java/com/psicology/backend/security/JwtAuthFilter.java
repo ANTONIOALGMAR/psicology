@@ -31,8 +31,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String auth = request.getHeader("Authorization");
         if (auth != null && auth.startsWith("Bearer ")) {
             token = auth.substring(7);
-        } else if (request.getParameter("token") != null && !request.getParameter("token").isBlank()) {
-            token = request.getParameter("token");
+        } else if ("GET".equalsIgnoreCase(request.getMethod())) {
+            String queryToken = request.getParameter("token");
+            String path = request.getRequestURI();
+            if (queryToken != null && !queryToken.isBlank() && isTokenQueryAllowedPath(path)) {
+                token = queryToken;
+            }
         }
         if (token != null) {
             try {
@@ -48,5 +52,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             } catch (Exception ignored) { }
         }
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isTokenQueryAllowedPath(String path) {
+        if (path == null) return false;
+        return path.contains("/audio")
+                || path.contains("/export")
+                || path.contains("/download")
+                || path.contains("/files");
     }
 }

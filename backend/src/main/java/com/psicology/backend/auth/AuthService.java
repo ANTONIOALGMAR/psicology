@@ -52,7 +52,7 @@ public class AuthService {
             if (!invite.isValid()) throw new IllegalArgumentException("Convite expirado ou já utilizado");
             role = invite.getRole();
         }
-        if (invite == null && (role == Role.ADMIN)) role = Role.PATIENT;
+        if (invite == null) role = Role.PATIENT;
         User user = User.builder()
                 .name(req.name()).email(req.email().toLowerCase())
                 .passwordHash(passwordEncoder.encode(req.password()))
@@ -86,6 +86,9 @@ public class AuthService {
 
     @Transactional
     public InviteResponse createInvite(InviteRequest req, User creator) {
+        if (creator.getRole() != Role.ADMIN) {
+            throw new org.springframework.security.access.AccessDeniedException("Apenas administradores podem criar convites");
+        }
         String code = UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
         Invite invite = Invite.builder()
                 .code(code)
@@ -114,8 +117,8 @@ public class AuthService {
         if (!passwordEncoder.matches(req.currentPassword(), user.getPasswordHash())) {
             throw new IllegalArgumentException("Senha atual incorreta");
         }
-        if (req.newPassword() == null || req.newPassword().length() < 6) {
-            throw new IllegalArgumentException("A nova senha deve ter pelo menos 6 caracteres");
+        if (req.newPassword().equals(req.currentPassword())) {
+            throw new IllegalArgumentException("A nova senha deve ser diferente da senha atual");
         }
         user.setPasswordHash(passwordEncoder.encode(req.newPassword()));
         userRepository.save(user);

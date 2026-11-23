@@ -25,7 +25,7 @@ class TestApiIntegrationTest {
 
     private String registerAndToken() throws Exception {
         String email = "t" + UUID.randomUUID() + "@test.com";
-        String reg = "{\"name\":\"Paciente\",\"email\":\"" + email + "\",\"password\":\"segredo1\",\"role\":\"PATIENT\"}";
+        String reg = "{\"name\":\"Paciente\",\"email\":\"" + email + "\",\"password\":\"Senha@123\",\"role\":\"PATIENT\"}";
         MvcResult res = mvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON).content(reg))
                 .andExpect(status().isOk()).andReturn();

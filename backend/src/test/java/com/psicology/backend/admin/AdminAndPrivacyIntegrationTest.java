@@ -26,7 +26,7 @@ class AdminAndPrivacyIntegrationTest {
     private String registerPatientWithConsents() throws Exception {
         String email = "lgpd" + UUID.randomUUID() + "@test.com";
         String body = """
-                {"name":"Titular","email":"%s","password":"segredo1","role":"PATIENT",
+                {"name":"Titular","email":"%s","password":"Senha@123","role":"PATIENT",
                  "acceptTerms":true,"acceptPrivacy":true}
                 """.formatted(email);
         MvcResult res = mvc.perform(post("/api/auth/register")
@@ -93,7 +93,7 @@ class AdminAndPrivacyIntegrationTest {
         String email = "psy" + UUID.randomUUID() + "@test.com";
         MvcResult created = mvc.perform(post("/api/admin/users").header("Authorization", "Bearer " + admin)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Nova Psicóloga\",\"email\":\"" + email + "\",\"password\":\"senha12345\",\"role\":\"PSYCHOLOGIST\"}"))
+                        .content("{\"name\":\"Nova Psicóloga\",\"email\":\"" + email + "\",\"password\":\"Senha@12345\",\"role\":\"PSYCHOLOGIST\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.role").value("PSYCHOLOGIST"))
                 .andReturn();
@@ -102,10 +102,10 @@ class AdminAndPrivacyIntegrationTest {
         mvc.perform(post("/api/admin/users/" + userId + "/reset-password")
                         .header("Authorization", "Bearer " + admin)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"newPassword\":\"outrasenha123\"}"))
+                        .content("{\"newPassword\":\"OutraSenha@123\"}"))
                 .andExpect(status().isOk());
         mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"" + email + "\",\"password\":\"outrasenha123\"}"))
+                        .content("{\"email\":\"" + email + "\",\"password\":\"OutraSenha@123\"}"))
                 .andExpect(status().isOk());
 
         mvc.perform(put("/api/admin/users/" + userId + "/role")

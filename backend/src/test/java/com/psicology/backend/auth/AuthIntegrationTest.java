@@ -26,7 +26,7 @@ class AuthIntegrationTest {
     @Test
     void registerLoginAndMeFlow() throws Exception {
         String email = "user" + UUID.randomUUID() + "@test.com";
-        String reg = "{\"name\":\"Teste\",\"email\":\"" + email + "\",\"password\":\"segredo1\",\"role\":\"PATIENT\"}";
+        String reg = "{\"name\":\"Teste\",\"email\":\"" + email + "\",\"password\":\"Senha@123\",\"role\":\"PATIENT\"}";
 
         MvcResult regRes = mvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON).content(reg))
@@ -38,7 +38,7 @@ class AuthIntegrationTest {
 
         mvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"" + email + "\",\"password\":\"segredo1\"}"))
+                        .content("{\"email\":\"" + email + "\",\"password\":\"Senha@123\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.user.name").value("Teste"));
 
@@ -58,7 +58,7 @@ class AuthIntegrationTest {
     @Test
     void duplicateEmailRejected() throws Exception {
         String email = "dup" + UUID.randomUUID() + "@test.com";
-        String body = "{\"name\":\"Dup\",\"email\":\"" + email + "\",\"password\":\"segredo1\"}";
+        String body = "{\"name\":\"Dup\",\"email\":\"" + email + "\",\"password\":\"Senha@123\"}";
         mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk());
         mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content(body))

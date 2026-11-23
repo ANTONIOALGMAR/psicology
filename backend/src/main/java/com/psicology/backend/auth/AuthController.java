@@ -6,6 +6,7 @@ import com.psicology.backend.dto.AuthDtos.*;
 import com.psicology.backend.security.AppUserDetails;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,6 +33,7 @@ public class AuthController {
         return new UserResponse(u.getId(), u.getName(), u.getEmail(), u.getRole());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/invites")
     public InviteResponse invite(@Valid @RequestBody InviteRequest req, @AuthenticationPrincipal AppUserDetails principal) {
         User creator = userRepository.findById(principal.getId()).orElseThrow();

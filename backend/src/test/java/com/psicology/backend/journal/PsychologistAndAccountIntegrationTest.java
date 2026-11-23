@@ -23,19 +23,32 @@ class PsychologistAndAccountIntegrationTest {
     @Autowired ObjectMapper mapper;
 
     private String register(String name, String email, String role) throws Exception {
-        String reg = "{\"name\":\"" + name + "\",\"email\":\"" + email + "\",\"password\":\"segredo1\",\"role\":\"" + role + "\"}";
+        String reg = "{\"name\":\"" + name + "\",\"email\":\"" + email + "\",\"password\":\"Senha@123\",\"role\":\"" + role + "\"}";
         MvcResult res = mvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON).content(reg))
                 .andExpect(status().isOk()).andReturn();
         return mapper.readTree(res.getResponse().getContentAsString()).get("token").asText();
     }
 
+    private String login(String email, String password) throws Exception {
+        MvcResult res = mvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}"))
+                .andExpect(status().isOk()).andReturn();
+        return mapper.readTree(res.getResponse().getContentAsString()).get("token").asText();
+    }
+
     @Test
     void psychologistCanLinkPatientViewJournalAndComment() throws Exception {
+        String adminToken = login("admin@psicare.com", "Admin@123");
         String patientEmail = "pac" + UUID.randomUUID() + "@test.com";
         String psyEmail = "psi" + UUID.randomUUID() + "@test.com";
         String patientToken = register("Paciente", patientEmail, "PATIENT");
-        String psyToken = register("Psico", psyEmail, "PSYCHOLOGIST");
+        mvc.perform(post("/api/admin/users").header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Psico\",\"email\":\"" + psyEmail + "\",\"password\":\"Senha@12345\",\"role\":\"PSYCHOLOGIST\"}"))
+                .andExpect(status().isOk());
+        String psyToken = login(psyEmail, "Senha@12345");
 
         MvcResult created = mvc.perform(post("/api/journal")
                         .header("Authorization", "Bearer " + patientToken)
@@ -93,12 +106,12 @@ class PsychologistAndAccountIntegrationTest {
         mvc.perform(post("/api/auth/change-password")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"currentPassword\":\"segredo1\",\"newPassword\":\"novasenha1\"}"))
+                        .content("{\"currentPassword\":\"Senha@123\",\"newPassword\":\"NovaSenha@1\"}"))
                 .andExpect(status().isOk());
 
         mvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"" + email + "\",\"password\":\"novasenha1\"}"))
+                        .content("{\"email\":\"" + email + "\",\"password\":\"NovaSenha@1\"}"))
                 .andExpect(status().isOk());
     }
 }

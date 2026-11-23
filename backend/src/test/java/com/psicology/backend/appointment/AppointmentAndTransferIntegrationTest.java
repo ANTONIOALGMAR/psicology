@@ -35,7 +35,7 @@ class AppointmentAndTransferIntegrationTest {
         String email = role.toLowerCase() + UUID.randomUUID() + "@test.com";
         MvcResult res = mvc.perform(post("/api/admin/users").header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"User " + role + "\",\"email\":\"" + email + "\",\"password\":\"senha12345\",\"role\":\"" + role + "\"}"))
+                        .content("{\"name\":\"User " + role + "\",\"email\":\"" + email + "\",\"password\":\"Senha@12345\",\"role\":\"" + role + "\"}"))
                 .andExpect(status().isOk()).andReturn();
         return mapper.readTree(res.getResponse().getContentAsString()).get("id").asText() + "|" + email;
     }
@@ -47,9 +47,9 @@ class AppointmentAndTransferIntegrationTest {
         String[] b = createUser(admin, "PSYCHOLOGIST").split("\\|");
         String[] p = createUser(admin, "PATIENT").split("\\|");
         String psyAId = a[0], psyAEmail = a[1], psyBId = b[0], psyBEmail = b[1], patientId = p[0], patientEmail = p[1];
-        String psyA = token(psyAEmail, "senha12345");
-        String psyB = token(psyBEmail, "senha12345");
-        String patient = token(patientEmail, "senha12345");
+        String psyA = token(psyAEmail, "Senha@12345");
+        String psyB = token(psyBEmail, "Senha@12345");
+        String patient = token(patientEmail, "Senha@12345");
 
         mvc.perform(post("/api/psychologist/patients/link").header("Authorization", "Bearer " + psyA)
                         .contentType(MediaType.APPLICATION_JSON)

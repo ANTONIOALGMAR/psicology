@@ -2,6 +2,9 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: psicology-db
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-psicology}
       POSTGRES_USER: ${POSTGRES_USER:-psicology}
@@ -9,7 +12,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U psicology -d psicology"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-psicology} -d ${POSTGRES_DB:-psicology}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -17,6 +20,10 @@ services:
   backend:
     build: ./backend
     container_name: psicology-backend
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
     environment:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/psicology}
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-psicology}
@@ -30,11 +37,14 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
 
   frontend:
     build: ./frontend
     container_name: psicology-frontend
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     depends_on:
       - backend
     ports:

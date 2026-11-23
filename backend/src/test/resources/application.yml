@@ -19,3 +19,6 @@ app:
     refresh-expiration-ms: 604800000
   storage:
     upload-dir: ./target/test-uploads
+  security:
+    rate-limit:
+      enabled: false

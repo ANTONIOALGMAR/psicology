@@ -39,7 +39,8 @@ export default function RegisterPage() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Senha</label>
-            <input type="password" minLength={6} className="w-full rounded-xl border border-slate-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-300" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} required />
+            <input type="password" minLength={8} pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,128}$" title="Mínimo 8 caracteres, com maiúscula, minúscula, número e caractere especial" className="w-full rounded-xl border border-slate-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-300" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} required />
+            <p className="text-xs text-slate-500 mt-1 sm:col-span-2">Use no mínimo 8 caracteres com maiúscula, minúscula, número e caractere especial.</p>
           </div>
         </div>
         <div className="mt-5 rounded-2xl border border-slate-200 p-4 bg-slate-50/60">

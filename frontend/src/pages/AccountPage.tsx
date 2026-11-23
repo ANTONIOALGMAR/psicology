@@ -82,12 +82,13 @@ export default function AccountPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Nova senha</label>
-            <input type="password" className="w-full rounded-xl border border-slate-200 px-4 py-2.5" value={newPassword} onChange={e=>setNewPassword(e.target.value)} placeholder="Mínimo 6 caracteres" />
+            <input type="password" className="w-full rounded-xl border border-slate-200 px-4 py-2.5" value={newPassword} onChange={e=>setNewPassword(e.target.value)} placeholder="Mínimo 8 caracteres, com maiúscula, minúscula, número e especial" />
+            <p className="text-xs text-slate-500 mt-1">Mínimo 8 caracteres, incluindo maiúscula, minúscula, número e caractere especial.</p>
           </div>
           {pwMsg && <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-xl px-3 py-2">{pwMsg}</div>}
           {pwErr && <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-3 py-2">{pwErr}</div>}
           <div>
-            <button onClick={changePassword} disabled={changing || !currentPassword || newPassword.length < 6} className="rounded-xl bg-slate-800 hover:bg-slate-900 text-white px-5 py-2.5 font-semibold disabled:opacity-60">{changing ? 'Alterando...' : 'Alterar senha'}</button>
+            <button onClick={changePassword} disabled={changing || !currentPassword || !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,128}$/.test(newPassword)} className="rounded-xl bg-slate-800 hover:bg-slate-900 text-white px-5 py-2.5 font-semibold disabled:opacity-60">{changing ? 'Alterando...' : 'Alterar senha'}</button>
           </div>
         </div>
       </div>
